@@ -1,0 +1,144 @@
+PERSON_FULL_NAME:
+  min_len: 3
+  max_len: 120
+  must_not_match:
+    - "^Agent$"
+    - "^Customer$"
+    - "^Name$"
+
+PERSON_FIRST_NAME:
+  min_len: 2
+  max_len: 40
+
+PERSON_LAST_NAME:
+  min_len: 2
+  max_len: 60
+
+EMAIL_ADDRESS:
+  min_len: 6
+  max_len: 200
+
+PHONE_NUMBER:
+  min_len: 7
+  max_len: 30
+
+STREET_ADDRESS:
+  min_len: 6
+  max_len: 250
+
+DATE_OF_BIRTH:
+  min_len: 8
+  max_len: 20
+
+USERNAME:
+  min_len: 4
+  max_len: 64
+  must_not_match:
+    - "^(Agent|Customer|Thank|you|for|calling|this|How|can|help|today)$"
+
+SSN:
+  must_match: "\\d{3}-\\d{2}-\\d{4}"
+
+ACCOUNT_NUMBER_AMEX:
+  min_len: 15
+  max_len: 24
+
+AMEX_ACCOUNT_ID:
+  min_len: 12
+  max_len: 80
+
+CARDMEMBER_ID:
+  min_len: 8
+  max_len: 40
+
+CUSTOMER_ID:
+  min_len: 8
+  max_len: 80
+
+MR_NUMBER:
+  min_len: 8
+  max_len: 80
+
+PAR_ID:
+  min_len: 8
+  max_len: 80
+
+NETWORK_TOKEN_ID:
+  min_len: 8
+  max_len: 80
+
+TRACK_DATA:
+  min_len: 8
+  max_len: 120
+
+TRACK_LOG_ID:
+  min_len: 8
+  max_len: 80
+
+EMPLOYEE_ID:
+  min_len: 8
+  max_len: 60
+
+MOTHERS_MAIDEN_NAME:
+  min_len: 2
+  max_len: 60
+
+SECURITY_QUESTION:
+  min_len: 6
+  max_len: 200
+
+SECURITY_ANSWER:
+  min_len: 1
+  max_len: 100
+
+PIN:
+  min_len: 4
+  max_len: 12
+
+ONE_TIME_CODE:
+  min_len: 4
+  max_len: 60
+
+PRECISE_GEOLOCATION:
+  min_len: 7
+  max_len: 60
+
+DEVICE_APP_DATA:
+  min_len: 6
+  max_len: 120
+
+IP_ADDRESS:
+  min_len: 7
+  max_len: 45
+
+DRIVERS_LICENSE_NUMBER:
+  min_len: 5
+  max_len: 20
+
+PASSPORT_NUMBER:
+  min_len: 6
+  max_len: 12
+
+REFERENCE_IDENTIFIER:
+  min_len: 5
+  max_len: 80
+
+UNKNOWN_ACCOUNT:
+  min_len: 8
+  max_len: 20
+
+UNKNOWN_IDENTIFIER:
+  min_len: 5
+  max_len: 100
+
+UNKNOWN_SECRET:
+  min_len: 4
+  max_len: 120
+
+UNKNOWN_SENSITIVE:
+  min_len: 2
+  max_len: 120
+
+UNKNOWN_PII:
+  min_len: 2
+  max_len: 200

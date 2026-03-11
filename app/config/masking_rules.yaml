@@ -1,0 +1,13 @@
+partial_masking:
+  EMAIL_ADDRESS:
+    strategy: "mask_before_at_keep_first"
+  PHONE_NUMBER:
+    strategy: "keep_last_4"
+  ACCOUNT_NUMBER_AMEX:
+    strategy: "keep_bin_and_last_4"
+  BANK_ACCOUNT_NUMBER:
+    strategy: "keep_last_4"
+  PERSON_FULL_NAME:
+    strategy: "keep_first_two_chars"
+
+default_strategy: "full_mask"

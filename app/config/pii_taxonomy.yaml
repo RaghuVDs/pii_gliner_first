@@ -1,0 +1,106 @@
+general:
+  PERSON_FULL_NAME: { gliner_aliases: ["person", "full name", "customer name", "cardmember name", "name", "individual name"], threshold: 0.35 }
+  PERSON_FIRST_NAME: { gliner_aliases: ["first name", "given name", "person first name", "individual first name"], threshold: 0.35 }
+  PERSON_MIDDLE_NAME: { gliner_aliases: ["middle name", "middle initial"], threshold: 0.35 }
+  PERSON_LAST_NAME: { gliner_aliases: ["last name", "surname", "family name"], threshold: 0.35 }
+  EMAIL_ADDRESS: { gliner_aliases: ["email", "email address"] }
+  PHONE_NUMBER: { gliner_aliases: ["phone number", "telephone", "mobile number", "contact number"] }
+  STREET_ADDRESS: { gliner_aliases: ["address", "street address", "billing address", "home address"] }
+  DATE_OF_BIRTH: { gliner_aliases: ["date of birth", "dob", "birth date"] }
+  AGE: { gliner_aliases: ["age", "years old"] }
+  GENDER: { gliner_aliases: ["gender", "sex", "title", "pronouns"] }
+  USERNAME: { gliner_aliases: ["username", "user name", "login"] }
+  PASSWORD: { gliner_aliases: ["password", "passphrase", "secret password"] }
+  IP_ADDRESS: { gliner_aliases: ["ip address", "ipv4", "ipv6"] }
+  URL: { gliner_aliases: ["url", "website", "web link", "web address"] }
+
+financial_general:
+  BANK_ACCOUNT_NUMBER: { gliner_aliases: ["bank account", "checking account", "savings account"] }
+  ROUTING_NUMBER: { gliner_aliases: ["routing number", "aba number", "aba routing"] }
+  CARD_EXPIRATION_DATE: { gliner_aliases: ["expiration date", "card expiration", "exp date"] }
+  CARD_SECURITY_CODE: { gliner_aliases: ["security code", "cvv", "cvc", "cid"] }
+  CREDIT_CARD_NUMBER: { gliner_aliases: ["visa", "mastercard", "discover", "generic credit card"] }
+  IBAN: { gliner_aliases: ["iban", "international bank account number"] }
+  CRYPTO_WALLET: { gliner_aliases: ["crypto wallet", "bitcoin address", "ethereum address"] }
+  INSURANCE_POLICY: { gliner_aliases: ["insurance policy", "policy number"] }
+
+amex_specific:
+  ACCOUNT_NUMBER_AMEX: { gliner_aliases: ["credit card number", "account number", "amex account number"] }
+  AMEX_ACCOUNT_ID: { gliner_aliases: ["account id", "amex account id"] }
+  CARDMEMBER_ID: { gliner_aliases: ["cardmember id", "legacy cardmember id"] }
+  CUSTOMER_ID: { gliner_aliases: ["customer id", "global customer id"] }
+  MR_NUMBER: { gliner_aliases: ["membership rewards number", "mr number", "master mr id"] }
+  PAR_ID: { gliner_aliases: ["payment account reference", "par", "par id"] }
+  NETWORK_TOKEN_ID: { gliner_aliases: ["network token id", "token id", "token reference"] }
+  TRACK_DATA: { gliner_aliases: ["track data", "track 2", "magstripe data"] }
+  TRACK_LOG_ID: { gliner_aliases: ["track log id", "internal ref"] }
+  EMPLOYEE_ID: { gliner_aliases: ["employee id", "amex employee id", "badge number"] }
+  SECURITY_QUESTION: { gliner_aliases: ["security question", "challenge question"] }
+  SECURITY_ANSWER: { gliner_aliases: ["security answer", "stored answer"] }
+  MOTHERS_MAIDEN_NAME: { gliner_aliases: ["mother's maiden name", "mothers maiden name"] }
+  PIN: { gliner_aliases: ["pin", "portal access pin", "ivr pin"] }
+  ONE_TIME_CODE: { gliner_aliases: ["one-time code", "otp", "backup code", "verification code"] }
+  PRECISE_GEOLOCATION: { gliner_aliases: ["precise geolocation", "gps coordinates", "logged location"] }
+  DEVICE_APP_DATA: { gliner_aliases: ["device id", "device token", "device advertising id", "mac address"] }
+  REFERENCE_IDENTIFIER: { gliner_aliases: ["reference number", "reference identifier", "secure message id"] }
+  BAND_LEVEL: { gliner_aliases: ["band level", "job band", "employee level"] }
+  PERFORMANCE_RATING: { gliner_aliases: ["performance rating", "review rating", "performance review"] }
+  OPINIONS_CAPTURED: { gliner_aliases: ["subjective opinion", "customer complaint", "personal statement"] }
+  FICO_SCORE: { gliner_aliases: ["fico score", "credit score", "bureau score"] }
+  PARTNER_ACCOUNT_NUMBER: { gliner_aliases: ["loyalty number", "frequent flyer number", "hotel rewards number", "partner account"] }
+  TICKET_NUMBER: { gliner_aliases: ["ticket number", "record locator", "flight confirmation"] }
+  AUTHORIZED_AGENT_INFO: { gliner_aliases: ["authorized agent", "program administrator", "account manager"] }
+  HIGH_VALUE_INDICATOR: { gliner_aliases: ["high value card member", "centurion member", "vip status"] }
+  MARKETING_PREFERENCES: { gliner_aliases: ["do not call", "dnc", "marketing opt-out", "privacy preference"] }
+  ROC_DATA: { gliner_aliases: ["record of charge", "roc data", "charge record"] }
+  SOLE_TRADER_DATA: { gliner_aliases: ["sole trader", "proprietorship", "proprietor business"] }
+
+country_specific:
+  SSN: { gliner_aliases: ["social security number", "ssn"] }
+  DRIVERS_LICENSE_NUMBER: { gliner_aliases: ["driver's license", "drivers license number", "license number"] }
+  PASSPORT_NUMBER: { gliner_aliases: ["passport number", "passport"] }
+  GREEN_CARD_NUMBER: { gliner_aliases: ["green card", "alien registration number", "resident card"] }
+  NATIONAL_ID: { gliner_aliases: ["national id", "national identification number"] }
+  TAX_ID: { gliner_aliases: ["tax id", "itin", "ein", "tax identification number"] }
+  NON_DRIVERS_ID: { gliner_aliases: ["state id", "military id", "non-driver identification"] }
+
+contextual:
+  BIOMETRIC_INFORMATION: { gliner_aliases: ["biometric", "voiceprint", "fingerprint", "faceprint"] }
+  CHILDBEARING_STATUS: { gliner_aliases: ["pregnant", "pregnancy", "maternity", "childbearing"] }
+  CRIMINAL_RECORD: { gliner_aliases: ["criminal record", "misdemeanor", "felony", "conviction", "traffic violation"] }
+  DISABILITY_STATUS: { gliner_aliases: ["disability", "accessibility accommodation", "disabled"] }
+  PHI: { gliner_aliases: ["health condition", "diagnosis", "disease", "medical diagnosis", "diabetes", "macular degeneration"] }
+  GENETIC_INFORMATION: { gliner_aliases: ["genetic information", "dna profile", "genetic test"] }
+  ETHNICITY_OR_RACE: { gliner_aliases: ["ethnicity", "race", "hispanic", "latino", "caucasian", "asian"] }
+  INCOME: { gliner_aliases: ["income", "salary", "wages", "household income"] }
+  NATIONALITY: { gliner_aliases: ["citizenship", "dual citizenship", "country of origin", "nationality"] }
+  POLITICAL_OPINIONS: { gliner_aliases: ["political party", "registered voter", "political action committee", "independent", "democrat", "republican"] }
+  RELIGION: { gliner_aliases: ["religious faith", "kosher", "jewish", "christian", "muslim"] }
+  SEXUAL_ORIENTATION: { gliner_aliases: ["sexual orientation", "same-sex partner", "domestic partner"] }
+  LEGAL_JUDGEMENT: { gliner_aliases: ["legal judgement", "garnishment", "court order", "civil court"] }
+  LEAVE_OF_ABSENCE_TYPE: { gliner_aliases: ["leave of absence", "medical leave", "parental leave"] }
+  MARITAL_OR_FAMILIAL_STATUS: { gliner_aliases: ["marital status", "divorced", "married", "domestic partner"] }
+  EMERGENCY_CONTACT_INFORMATION: { gliner_aliases: ["emergency contact", "emergency contact info"] }
+  OCCUPATION: { gliner_aliases: ["occupation", "job title", "profession"] }
+  PUBLIC_ASSISTANCE_RECEIPT: { gliner_aliases: ["child support", "alimony", "public assistance", "welfare"] }
+  CHILDREN_INFORMATION: { gliner_aliases: ["minor child", "child age"] }
+  MEMBERSHIP_OR_TRADE_UNIONS: { gliner_aliases: ["trade union", "union member"] }
+  CUSTOMER_PURCHASE_DATA: { gliner_aliases: ["transaction data", "purchase history", "bought at", "store"] }
+  SOCIAL_MEDIA_PROFILE: { gliner_aliases: ["social media profile", "linkedin handle", "facebook profile"] }
+  EMPLOYER_NAME: { gliner_aliases: ["employer name", "company name", "organization"] }
+  ONLINE_UNIQUE_IDENTIFIER: { gliner_aliases: ["tracking cookie", "cookie id", "pixel id", "session token"] }
+  EDUCATIONAL_AFFILIATIONS: { gliner_aliases: ["education level", "university attended", "degree", "graduated from"] }
+  EMPLOYMENT_HISTORY: { gliner_aliases: ["previous employer", "employment history", "past job"] }
+  MORTGAGE_LOAN_INFO: { gliner_aliases: ["mortgage number", "loan number", "auto loan"] }
+  PHOTOGRAPH_METADATA: { gliner_aliases: ["exif data", "photo metadata", "image location"] }
+  CARD_TYPE: { gliner_aliases: ["card type", "platinum card", "centurion card", "gold card"] }
+  CHARITABLE_CONTRIBUTION: { gliner_aliases: ["charitable contribution", "donation", "charity"] }
+  CUSTOMER_STATUS: { gliner_aliases: ["customer status", "account status", "delinquent", "deceased"] }
+  PAYMENT_HISTORY: { gliner_aliases: ["payment history", "past due", "late payment", "collections"] }
+  RETIREMENT_DATE: { gliner_aliases: ["retirement date", "retired on"] }
+  SEPARATION_DATE: { gliner_aliases: ["separation date", "termination date", "fired on"] }
+  VETERAN_STATUS: { gliner_aliases: ["veteran status", "military veteran", "active duty"] }
+
+fallback:
+  UNKNOWN_PII: { gliner_aliases: ["pii", "sensitive data", "secret"] }
+

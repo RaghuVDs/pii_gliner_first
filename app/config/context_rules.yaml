@@ -1,0 +1,42 @@
+security_keywords:
+  - security question
+  - challenge question
+  - stored answer
+  - mother's maiden name
+  - mother’s maiden name
+  - pin
+  - passcode
+  - password
+  - otp
+  - one-time code
+  - verification code
+
+financial_keywords:
+  - account
+  - card
+  - amex
+  - routing
+  - bank account
+  - membership rewards
+  - mr account
+  - track data
+  - payment
+  - transaction
+
+transaction_keywords:
+  - transaction
+  - spent at
+  - purchase
+  - posted
+  - charge
+  - payment
+
+dob_keywords:
+  - dob
+  - date of birth
+
+geo_keywords:
+  - gps
+  - precise geolocation
+  - coordinates
+  - logged location

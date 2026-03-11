@@ -1,0 +1,175 @@
+PERSON_FULL_NAME:
+  - Full Legal Name
+  - Customer Name (legal)
+  - Cardmember Name
+  - Name
+  - Primary Cardmember
+  - Embossed Name
+  - Individual's Name (Full)
+  - Secondary Subject (Full)
+
+PERSON_FIRST_NAME:
+  - First Name
+  - Individual's Name (First)
+
+PERSON_LAST_NAME:
+  - Last Name
+
+EMAIL_ADDRESS:
+  - Email
+  - Primary Email
+  - Secondary Email
+  - Alternate Email
+  - Work Email
+  - Email Addresses
+
+PHONE_NUMBER:
+  - Phone
+  - Mobile
+  - Home Phone
+  - Work Phone
+  - Service Phone
+  - Phone Numbers
+
+STREET_ADDRESS:
+  - Address
+  - Billing Address
+  - Home Address
+  - Street Address
+
+DATE_OF_BIRTH:
+  - DOB
+  - Date of Birth
+
+USERNAME:
+  - Username
+  - Online Account
+  - User Name
+
+SSN:
+  - Social Security Number
+  - Full SSN on File
+
+ACCOUNT_NUMBER_AMEX:
+  - Account Number (AMEX)
+  - Account Number
+  - Amex Account #1
+  - Amex Account #2
+  - Amex Account #3
+  - Amex Account #4
+  - Amex Account #5
+  - Amex Account #6
+
+AMEX_ACCOUNT_ID:
+  - Amex Account ID
+
+CARDMEMBER_ID:
+  - Legacy Cardmember ID
+
+CUSTOMER_ID:
+  - Customer ID
+  - Customer ID (Global)
+
+MR_NUMBER:
+  - MR Account Number
+  - Master MR ID
+  - MR Number
+  - Membership Rewards Number
+
+PAR_ID:
+  - PAR-ID
+
+NETWORK_TOKEN_ID:
+  - Token ID
+  - TokenRefID
+
+TRACK_DATA:
+  - Track Data
+  - Sample Track 2
+  - TRACK 2 EQUIVALENT DATA
+
+TRACK_LOG_ID:
+  - Internal Ref
+
+EMPLOYEE_ID:
+  - Employee ID
+  - Amex Employee ID
+  - Employee ID / Employer Name
+
+MOTHERS_MAIDEN_NAME:
+  - Mother's maiden name
+  - Mother’s maiden name
+
+SECURITY_QUESTION:
+  - Security Question
+  - Primary Question
+  - Secondary Question
+  - Tertiary Question
+  - Challenge Question
+
+SECURITY_ANSWER:
+  - Security Answer
+  - Stored Answer
+
+PIN:
+  - PIN
+  - Portal Access PIN
+  - IVR 4-Digit PIN
+
+ONE_TIME_CODE:
+  - One-Time Code
+  - Backup One-Time Code
+  - 6-Digit One-Time Code
+
+PRECISE_GEOLOCATION:
+  - GPS coordinates
+  - Logged Location
+  - Precise Geo
+  - Precise Geolocation
+
+DEVICE_APP_DATA:
+  - Device Name
+  - Device ID
+  - Amex Device ID
+  - Device Advertising ID
+  - Device Token
+  - Device/App Data
+
+IP_ADDRESS:
+  - IP Address
+  - System IP Address
+
+DRIVERS_LICENSE_NUMBER:
+  - Driver's License
+  - Drivers License
+  - Driver’s license
+
+PASSPORT_NUMBER:
+  - Passport Number
+  - U.S. Passport
+
+EMERGENCY_CONTACT_INFORMATION:
+  - Emergency Contact
+
+REFERENCE_IDENTIFIER:
+  - Reference
+  - Reference Code
+  - Secure Message ID
+
+BANK_ACCOUNT_NUMBER:
+  - Banking Account Number
+  - Account
+
+ROUTING_NUMBER:
+  - Routing
+  - Routing Number
+
+CARD_EXPIRATION_DATE:
+  - Expires
+  - Expiration
+
+CARD_SECURITY_CODE:
+  - CID
+  - CVV
+  - CVC
+  - Security Code
