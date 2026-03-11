@@ -109,7 +109,7 @@ Reinforcement Learning from Human Feedback (RLHF): Build a continuous-learning p
 
 By continually rewarding the model for correctly identifying complex corporate structures the model will transition from a "Better Performer" into a highly specialized Enterprise Auditor, naturally increasing its base confidence scores and reducing reliance on the Python safety nets.
 
-# 5. Conclusion
+# 8. Conclusion
 
 By combining the determinism of Regex, the semantic adaptability of GLiNER and the grammatical discipline of spaCy I have created an engine that does not rely on guessing the future. 
 
