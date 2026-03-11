@@ -1,7 +1,7 @@
 ---
 title: "Enterprise Hybrid PII Redaction Engine: Architecture & Documentation"
 author: "Raghuveera Narasimha"
-date: "`r Sys.Date()`"
+date: "March 11th 2026"
 output:
   html_document:
     toc: true
