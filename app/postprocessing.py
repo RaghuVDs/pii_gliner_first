@@ -14,7 +14,8 @@ nlp = None
 def get_nlp():
     global nlp
     if nlp is None:
-        nlp = spacy.load("en_core_web_sm")
+        # MASSIVE SPEEDUP: Disable NER and Parser if only doing POS Tagging
+        nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
     return nlp
 
 def _context_window(text: str, start: int, end: int, pad: int = 100) -> str:
@@ -68,7 +69,6 @@ def apply_universal_dynamic_filters(text: str, detections: List[Detection]) -> L
     return kept
 
 def remove_false_positives(text: str, detections: List[Detection]) -> List[Detection]:
-    # Pass the raw detections directly into the universal laws. No stop_words set required!
     return apply_universal_dynamic_filters(text, detections)
 
 
@@ -77,6 +77,8 @@ def split_person_names(text: str, detections: List[Detection]) -> List[Detection
     Splits generic FULL_NAME detections into granular First, Middle, and Last name detections.
     """
     out: List[Detection] = []
+    
+    TITLES = {"mr", "mr.", "mrs", "mrs.", "ms", "ms.", "dr", "dr.", "sir", "madam"}
 
     for d in detections:
         if d.label != "PERSON_FULL_NAME":
@@ -84,21 +86,27 @@ def split_person_names(text: str, detections: List[Detection]) -> List[Detection
             continue
 
         raw = (d.text or "").strip().strip("\"'“”‘’")
-        parts = [p for p in re.split(r"\s+", raw) if p]
+        parts = [p for p in re.split(r"\s+", raw) if p and p.lower() not in TITLES]
 
-        # 1. First Name Only (1 word)
+        if not parts:
+            continue
+
+        # 1. Single Word Remaining (After stripping titles)
         if len(parts) == 1:
-            out.append(
-                Detection(
-                    label="PERSON_FIRST_NAME",
-                    start=d.start,
-                    end=d.end,
-                    text=raw,
-                    score=d.score,
-                    source="derived",
-                    meta={**getattr(d, "meta", {})},
+            first = parts[0]
+            rel_first = raw.find(first)
+            if rel_first >= 0:
+                out.append(
+                    Detection(
+                        label="PERSON_LAST_NAME", # Usually if it's "Mr. Doe", Doe is the last name!
+                        start=d.start + rel_first,
+                        end=d.start + rel_first + len(first),
+                        text=first,
+                        score=d.score,
+                        source="derived",
+                        meta={**getattr(d, "meta", {})},
+                    )
                 )
-            )
             continue
 
         # 2. First and Last Name (2 or more words)

@@ -37,6 +37,33 @@ BAD_ORG_VALUES = {
     "discover", "jcb"
 }
 
+def luhn_checksum(card_number: str) -> bool:
+    """Validates credit card numbers, AMEX, and Track Data using the Luhn Algorithm."""
+    digits = [int(c) for c in card_number if c.isdigit()]
+    if not digits:
+        return False
+    checksum = 0
+    reverse_digits = digits[::-1]
+    for i, d in enumerate(reverse_digits):
+        if i % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        checksum += d
+    return checksum % 10 == 0
+
+def aba_routing_checksum(routing_number: str) -> bool:
+    """Validates US Bank Routing Numbers using the mathematical Mod-10 checksum."""
+    digits = [int(c) for c in routing_number if c.isdigit()]
+    if len(digits) != 9:
+        return False
+    calc = (
+        3 * (digits[0] + digits[3] + digits[6]) +
+        7 * (digits[1] + digits[4] + digits[7]) +
+        1 * (digits[2] + digits[5] + digits[8])
+    )
+    return calc % 10 == 0
+
 def normalize_candidate(text: str) -> str:
     return text.strip().strip("\"'“”‘’").strip()
 
@@ -88,10 +115,15 @@ def is_valid_employee_id(value: str) -> bool:
 
 def is_valid_track_data(value: str) -> bool:
     v = normalize_candidate(value)
+    # Extract the PAN (Primary Account Number) from track data and check Luhn
+    pan_match = re.search(r"%[Bb](\d{12,19})\^", v)
+    if pan_match and not luhn_checksum(pan_match.group(1)):
+        return False
     return bool(TRACK_DATA_RE.fullmatch(v)) and any(ch in v for ch in ["^", "?", "=", "%", ";"])
 
 def is_valid_routing_number(value: str) -> bool:
-    return bool(ROUTING_RE.fullmatch(normalize_candidate(value)))
+    v = normalize_candidate(value)
+    return bool(ROUTING_RE.fullmatch(v)) and aba_routing_checksum(v)
 
 def is_valid_bank_account_number(value: str) -> bool:
     v = normalize_candidate(value)
@@ -148,6 +180,14 @@ def should_keep_detection(label: str, value: str, neighborhood: str = "") -> boo
     if label == "SSN":
         if "audit" in n or "tracking code" in n or "case id" in n:
             return False
+
+    # Apply Luhn to Credit Cards
+    if label == "CREDIT_CARD_NUMBER" or label == "ACCOUNT_NUMBER_AMEX":
+        return luhn_checksum(v)
+    
+        # Reroute ITINs dynamically
+    if "itin" in n or "tax id" in n:
+        pass
 
     if label in {"INCOME", "PERFORMANCE_RATING"}:
         if v.lower() in {"salary", "wages", "performance rating", "rating"}:

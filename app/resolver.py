@@ -38,12 +38,20 @@ LABEL_PRIORITY = {
     "CUSTOMER_PURCHASE_DATA": 69, "SOCIAL_MEDIA_PROFILE": 68, "UNKNOWN_PII": 10
 }
 
+SOURCE_PRIORITY = {
+    "field_label": 50,
+    "context": 40,
+    "regex": 30,
+    "gliner": 20,
+    "derived": 10
+}
+
 def _score(d: Detection):
     return (
-        len(d.text),                     # 1. Longer matches win overlap battles
-        float(d.score),                  # 2. Confidence wins (Regex 0.98 kills GLiNER 0.40)
-        LABEL_PRIORITY.get(d.label, 10), # 3. Placemat Priority tie-breaker
-        1 if d.source == "regex" else 0  # 4. Final tie-breaker
+        len(d.text),                     # 1. Longer matches win
+        SOURCE_PRIORITY.get(d.source, 0),# 2. Source Fidelity (Field > Context > Regex > GLiNER)
+        float(d.score),                  # 3. Confidence score
+        LABEL_PRIORITY.get(d.label, 10)  # 4. Taxonomy Priority tie-breaker
     )
 
 def resolve_detections(detections: List[Detection]) -> List[Detection]:

@@ -14,7 +14,7 @@ class GLiNERDetector:
     def __init__(
         self,
         model_name: str = "knowledgator/gliner-pii-large-v1.0",
-        threshold: float = 0.20,
+        threshold: float = 0.35,
         enabled: bool = True,
         taxonomy_path: str = "app/config/pii_taxonomy.yaml"
     ):
@@ -25,20 +25,12 @@ class GLiNERDetector:
 
         if self.enabled:
             try:
-                # DYNAMIC DEVICE SELECTION (Massive Performance Boost)
-                device = "cpu"
-                if torch.cuda.is_available():
-                    device = "cuda"
-                elif torch.backends.mps.is_available():
-                    device = "mps"
+                # Explicitly allocate CPU threads to prevent thrashing
+                cpu_cores = os.cpu_count() or 4
+                torch.set_num_threads(cpu_cores)
                 
-                print(f"Loading GLiNER on {device.upper()}...")
-                
-                if device == "cpu":
-                    cpu_cores = os.cpu_count() or 4
-                    torch.set_num_threads(cpu_cores)
-                    
-                self.model = GLiNER.from_pretrained(model_name).to(device)
+                print(f"Loading GLiNER on CPU using {cpu_cores} threads...")
+                self.model = GLiNER.from_pretrained(model_name)
                 
             except Exception as e:
                 self.enabled = False
@@ -68,8 +60,7 @@ class GLiNERDetector:
             return []
 
         detections: List[Detection] = []
-        # INCREASED OVERLAP from 150 to 300 to ensure contextual clues are captured
-        chunks = self._sliding_window_chunker(text, window_size=1500, overlap=300)
+        chunks = self._sliding_window_chunker(text, window_size=1500, overlap=150)
         
         if not chunks:
             return []
@@ -78,15 +69,11 @@ class GLiNERDetector:
         chunk_texts = [c[0] for c in chunks]
         chunk_starts = [c[1] for c in chunks]
 
-        # Process each chunk individually so GLiNER doesn't confuse them for pre-tokenized words
-        batch_preds = []
-        for text_chunk in chunk_texts:
-            preds = self.model.predict_entities(
-                text_chunk,
-                self.gliner_prompt_labels,
-                threshold=self.threshold,
-            )
-            batch_preds.append(preds)
+        batch_preds = self.model.batch_predict_entities(
+            chunk_texts,
+            self.gliner_prompt_labels,
+            threshold=self.threshold,
+        )
 
         for preds, chunk_start in zip(batch_preds, chunk_starts):
             for pred in preds:
@@ -123,12 +110,8 @@ class GLiNERDetector:
         while start < text_length:
             end = min(start + window_size, text_length)
             if end < text_length:
-                # Snap to a newline if possible instead of just a space for cleaner boundaries
-                last_break = text.rfind('\n', start, end)
-                if last_break == -1:
-                    last_break = text.rfind(' ', start, end)
-                if last_break != -1: 
-                    end = last_break
+                last_space = text.rfind(' ', start, end)
+                if last_space != -1: end = last_space
             chunks.append((text[start:end], start))
             start = end - overlap
             if start <= chunks[-1][1]: start = end

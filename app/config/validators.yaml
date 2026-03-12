@@ -1,5 +1,5 @@
 PERSON_FULL_NAME:
-  min_len: 3
+  min_len: 
   max_len: 120
   must_not_match:
     - "^Agent$"

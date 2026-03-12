@@ -1,8 +1,8 @@
 general:
-  PERSON_FULL_NAME: { gliner_aliases: ["person", "full name", "customer name", "cardmember name", "name", "individual name"], threshold: 0.35 }
-  PERSON_FIRST_NAME: { gliner_aliases: ["first name", "given name", "person first name", "individual first name"], threshold: 0.35 }
-  PERSON_MIDDLE_NAME: { gliner_aliases: ["middle name", "middle initial"], threshold: 0.35 }
-  PERSON_LAST_NAME: { gliner_aliases: ["last name", "surname", "family name"], threshold: 0.35 }
+  PERSON_FULL_NAME: { gliner_aliases: ["person", "full name", "customer name", "cardmember name", "name", "individual name"] }
+  PERSON_FIRST_NAME: { gliner_aliases: ["first name", "given name", "person first name", "individual first name"]}
+  PERSON_MIDDLE_NAME: { gliner_aliases: ["middle name", "middle initial"] }
+  PERSON_LAST_NAME: { gliner_aliases: ["last name", "surname", "family name"] }
   EMAIL_ADDRESS: { gliner_aliases: ["email", "email address"] }
   PHONE_NUMBER: { gliner_aliases: ["phone number", "telephone", "mobile number", "contact number"] }
   STREET_ADDRESS: { gliner_aliases: ["address", "street address", "billing address", "home address"] }
