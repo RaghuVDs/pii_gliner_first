@@ -3,6 +3,11 @@ from typing import Dict, List
 from app.models import Detection
 
 class RegexDetector:
+    # Labels where patterns rely on letter case (e.g., [A-Z] for proper nouns).
+    # These are compiled WITHOUT the IGNORECASE flag to avoid matching common
+    # lowercase words as person names. Patterns can still opt-in with inline (?i).
+    _CASE_SENSITIVE_LABELS = {"PERSON_FULL_NAME"}
+
     def __init__(self, regex_rules: Dict):
         self.regex_rules = regex_rules or {}
         self.compiled = self._compile_rules(self.regex_rules)
@@ -13,7 +18,12 @@ class RegexDetector:
             compiled[label] = []
             for pattern in patterns:
                 try:
-                    compiled[label].append(re.compile(pattern, re.IGNORECASE))
+                    # Person name patterns use letter case to distinguish proper nouns
+                    # from common words; compile them case-sensitive.
+                    if label in self._CASE_SENSITIVE_LABELS and "(?i)" not in pattern:
+                        compiled[label].append(re.compile(pattern))
+                    else:
+                        compiled[label].append(re.compile(pattern, re.IGNORECASE))
                 except re.error:
                     pass
         return compiled

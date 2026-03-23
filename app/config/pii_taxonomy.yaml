@@ -1,106 +1,196 @@
+# ======================================================================
+# PII TAXONOMY -- Comprehensive GLiNER Detection Labels
+# Maps each PII type to zero-shot NER aliases and per-label thresholds
+# Organized into groups that map to tiered GLiNER detection passes
+# ======================================================================
+
+# ── TIER 0: Personal Identifiers & Government IDs ─────────────────────
+
 general:
-  PERSON_FULL_NAME: { gliner_aliases: ["person", "full name", "customer name", "cardmember name", "name", "individual name"] }
-  PERSON_FIRST_NAME: { gliner_aliases: ["first name", "given name", "person first name", "individual first name"]}
-  PERSON_MIDDLE_NAME: { gliner_aliases: ["middle name", "middle initial"] }
-  PERSON_LAST_NAME: { gliner_aliases: ["last name", "surname", "family name"] }
-  EMAIL_ADDRESS: { gliner_aliases: ["email", "email address"] }
-  PHONE_NUMBER: { gliner_aliases: ["phone number", "telephone", "mobile number", "contact number"] }
-  STREET_ADDRESS: { gliner_aliases: ["address", "street address", "billing address", "home address"] }
-  DATE_OF_BIRTH: { gliner_aliases: ["date of birth", "dob", "birth date"] }
-  AGE: { gliner_aliases: ["age", "years old"] }
-  GENDER: { gliner_aliases: ["gender", "sex", "title", "pronouns"] }
-  USERNAME: { gliner_aliases: ["username", "user name", "login"] }
-  PASSWORD: { gliner_aliases: ["password", "passphrase", "secret password"] }
-  IP_ADDRESS: { gliner_aliases: ["ip address", "ipv4", "ipv6"] }
-  URL: { gliner_aliases: ["url", "website", "web link", "web address"] }
-
-financial_general:
-  BANK_ACCOUNT_NUMBER: { gliner_aliases: ["bank account", "checking account", "savings account"] }
-  ROUTING_NUMBER: { gliner_aliases: ["routing number", "aba number", "aba routing"] }
-  CARD_EXPIRATION_DATE: { gliner_aliases: ["expiration date", "card expiration", "exp date"] }
-  CARD_SECURITY_CODE: { gliner_aliases: ["security code", "cvv", "cvc", "cid"] }
-  CREDIT_CARD_NUMBER: { gliner_aliases: ["visa", "mastercard", "discover", "generic credit card"] }
-  IBAN: { gliner_aliases: ["iban", "international bank account number"] }
-  CRYPTO_WALLET: { gliner_aliases: ["crypto wallet", "bitcoin address", "ethereum address"] }
-  INSURANCE_POLICY: { gliner_aliases: ["insurance policy", "policy number"] }
-
-amex_specific:
-  ACCOUNT_NUMBER_AMEX: { gliner_aliases: ["credit card number", "account number", "amex account number"] }
-  AMEX_ACCOUNT_ID: { gliner_aliases: ["account id", "amex account id"] }
-  CARDMEMBER_ID: { gliner_aliases: ["cardmember id", "legacy cardmember id"] }
-  CUSTOMER_ID: { gliner_aliases: ["customer id", "global customer id"] }
-  MR_NUMBER: { gliner_aliases: ["membership rewards number", "mr number", "master mr id"] }
-  PAR_ID: { gliner_aliases: ["payment account reference", "par", "par id"] }
-  NETWORK_TOKEN_ID: { gliner_aliases: ["network token id", "token id", "token reference"] }
-  TRACK_DATA: { gliner_aliases: ["track data", "track 2", "magstripe data"] }
-  TRACK_LOG_ID: { gliner_aliases: ["track log id", "internal ref"] }
-  EMPLOYEE_ID: { gliner_aliases: ["employee id", "amex employee id", "badge number"] }
-  SECURITY_QUESTION: { gliner_aliases: ["security question", "challenge question"] }
-  SECURITY_ANSWER: { gliner_aliases: ["security answer", "stored answer"] }
-  MOTHERS_MAIDEN_NAME: { gliner_aliases: ["mother's maiden name", "mothers maiden name"] }
-  PIN: { gliner_aliases: ["pin", "portal access pin", "ivr pin"] }
-  ONE_TIME_CODE: { gliner_aliases: ["one-time code", "otp", "backup code", "verification code"] }
-  PRECISE_GEOLOCATION: { gliner_aliases: ["precise geolocation", "gps coordinates", "logged location"] }
-  DEVICE_APP_DATA: { gliner_aliases: ["device id", "device token", "device advertising id", "mac address"] }
-  REFERENCE_IDENTIFIER: { gliner_aliases: ["reference number", "reference identifier", "secure message id"] }
-  BAND_LEVEL: { gliner_aliases: ["band level", "job band", "employee level"] }
-  PERFORMANCE_RATING: { gliner_aliases: ["performance rating", "review rating", "performance review"] }
-  OPINIONS_CAPTURED: { gliner_aliases: ["subjective opinion", "customer complaint", "personal statement"] }
-  FICO_SCORE: { gliner_aliases: ["fico score", "credit score", "bureau score"] }
-  PARTNER_ACCOUNT_NUMBER: { gliner_aliases: ["loyalty number", "frequent flyer number", "hotel rewards number", "partner account"] }
-  TICKET_NUMBER: { gliner_aliases: ["ticket number", "record locator", "flight confirmation"] }
-  AUTHORIZED_AGENT_INFO: { gliner_aliases: ["authorized agent", "program administrator", "account manager"] }
-  HIGH_VALUE_INDICATOR: { gliner_aliases: ["high value card member", "centurion member", "vip status"] }
-  MARKETING_PREFERENCES: { gliner_aliases: ["do not call", "dnc", "marketing opt-out", "privacy preference"] }
-  ROC_DATA: { gliner_aliases: ["record of charge", "roc data", "charge record"] }
-  SOLE_TRADER_DATA: { gliner_aliases: ["sole trader", "proprietorship", "proprietor business"] }
+  PERSON_FULL_NAME: { gliner_aliases: ["person", "full name", "customer name", "cardmember name", "name", "individual name"], threshold: 0.40 }
+  PERSON_FIRST_NAME: { gliner_aliases: ["first name", "given name", "person first name", "individual first name"], threshold: 0.40 }
+  PERSON_MIDDLE_NAME: { gliner_aliases: ["middle name", "middle initial"], threshold: 0.40 }
+  PERSON_LAST_NAME: { gliner_aliases: ["last name", "surname", "family name"], threshold: 0.40 }
+  ALIAS_NICKNAME: { gliner_aliases: ["alias", "nickname", "also known as", "pen name", "stage name"], threshold: 0.45 }
+  EMAIL_ADDRESS: { gliner_aliases: ["email", "email address"], threshold: 0.35 }
+  PHONE_NUMBER: { gliner_aliases: ["phone number", "telephone", "mobile number", "contact number", "fax number"], threshold: 0.35 }
+  STREET_ADDRESS: { gliner_aliases: ["address", "street address", "billing address", "home address", "mailing address", "postal address"], threshold: 0.40 }
+  DATE_OF_BIRTH: { gliner_aliases: ["date of birth", "dob", "birth date"], threshold: 0.35 }
+  PLACE_OF_BIRTH: { gliner_aliases: ["place of birth", "birth place", "city of birth", "born in"], threshold: 0.40 }
+  AGE: { gliner_aliases: ["age", "years old"], threshold: 0.35 }
+  GENDER: { gliner_aliases: ["gender", "sex"], threshold: 0.45 }
+  USERNAME: { gliner_aliases: ["username", "user name", "login"], threshold: 0.40 }
+  PASSWORD: { gliner_aliases: ["password", "passphrase", "secret password"], threshold: 0.40 }
+  IP_ADDRESS: { gliner_aliases: ["ip address", "ipv4", "ipv6"], threshold: 0.35 }
+  URL: { gliner_aliases: ["url", "website", "web link", "personal website", "blog url"], threshold: 0.35 }
+  SIGNATURE: { gliner_aliases: ["signature", "digital signature", "handwriting sample", "electronic signature"], threshold: 0.45 }
+  PHOTOGRAPH: { gliner_aliases: ["photograph", "headshot", "photo id", "profile photo", "digital photo"], threshold: 0.45 }
 
 country_specific:
-  SSN: { gliner_aliases: ["social security number", "ssn"] }
-  DRIVERS_LICENSE_NUMBER: { gliner_aliases: ["driver's license", "drivers license number", "license number"] }
-  PASSPORT_NUMBER: { gliner_aliases: ["passport number", "passport"] }
-  GREEN_CARD_NUMBER: { gliner_aliases: ["green card", "alien registration number", "resident card"] }
-  NATIONAL_ID: { gliner_aliases: ["national id", "national identification number"] }
-  TAX_ID: { gliner_aliases: ["tax id", "itin", "ein", "tax identification number"] }
-  NON_DRIVERS_ID: { gliner_aliases: ["state id", "military id", "non-driver identification"] }
+  SSN: { gliner_aliases: ["social security number", "ssn"], threshold: 0.25 }
+  DRIVERS_LICENSE_NUMBER: { gliner_aliases: ["driver's license", "drivers license number", "license number"], threshold: 0.35 }
+  PASSPORT_NUMBER: { gliner_aliases: ["passport number", "passport"], threshold: 0.35 }
+  VISA_NUMBER: { gliner_aliases: ["visa number", "travel visa", "work visa number", "visa id"], threshold: 0.35 }
+  GREEN_CARD_NUMBER: { gliner_aliases: ["green card", "alien registration number", "resident card", "a-number", "immigration file number", "naturalization certificate number"], threshold: 0.35 }
+  NATIONAL_ID: { gliner_aliases: ["national id", "national identification number"], threshold: 0.35 }
+  TAX_ID: { gliner_aliases: ["tax id", "itin", "ein", "tax identification number", "atin", "ptin", "taxpayer identification"], threshold: 0.30 }
+  NON_DRIVERS_ID: { gliner_aliases: ["state id", "military id", "non-driver identification", "tribal enrollment number", "dod id number"], threshold: 0.35 }
+  SELECTIVE_SERVICE_NUMBER: { gliner_aliases: ["selective service number", "selective service registration", "draft registration number"], threshold: 0.40 }
+  VOTER_REGISTRATION_NUMBER: { gliner_aliases: ["voter registration number", "voter id number", "voter registration"], threshold: 0.40 }
+  KNOWN_TRAVELER_NUMBER: { gliner_aliases: ["known traveler number", "global entry number", "tsa precheck number", "nexus card number", "sentri card number"], threshold: 0.40 }
+  PROFESSIONAL_LICENSE_NUMBER: { gliner_aliases: ["professional license number", "bar number", "medical license number", "cpa license number", "nursing license number"], threshold: 0.40 }
+
+# ── TIER 1: Financial & AMEX-Specific ─────────────────────────────────
+
+financial_general:
+  BANK_ACCOUNT_NUMBER: { gliner_aliases: ["bank account", "checking account", "savings account", "money market account", "certificate of deposit number", "safe deposit box number"], threshold: 0.30 }
+  ROUTING_NUMBER: { gliner_aliases: ["routing number", "aba number", "aba routing"], threshold: 0.30 }
+  SWIFT_BIC_CODE: { gliner_aliases: ["swift code", "bic code", "swift bic", "bank identifier code"], threshold: 0.35 }
+  CARD_EXPIRATION_DATE: { gliner_aliases: ["expiration date", "card expiration", "exp date"], threshold: 0.35 }
+  CARD_SECURITY_CODE: { gliner_aliases: ["security code", "cvv", "cvc", "cid", "cvv2"], threshold: 0.35 }
+  CREDIT_CARD_NUMBER: { gliner_aliases: ["visa", "mastercard", "discover", "credit card number", "debit card number", "prepaid card number"], threshold: 0.25 }
+  EBT_CARD_NUMBER: { gliner_aliases: ["ebt card number", "ebt card", "electronic benefit transfer card"], threshold: 0.35 }
+  IBAN: { gliner_aliases: ["iban", "international bank account number"], threshold: 0.30 }
+  CRYPTO_WALLET: { gliner_aliases: ["crypto wallet", "bitcoin address", "ethereum address", "cryptocurrency wallet address"], threshold: 0.35 }
+  INSURANCE_POLICY: { gliner_aliases: ["insurance policy", "policy number", "life insurance policy", "auto insurance policy", "homeowner insurance policy", "renter insurance policy", "umbrella policy", "disability insurance policy", "long-term care policy", "dental plan id", "vision plan id", "insurance group number"], threshold: 0.35 }
+  HEALTH_INSURANCE_ID: { gliner_aliases: ["health insurance id", "health plan id", "health plan beneficiary number", "health insurance claim number"], threshold: 0.35 }
+  WORKERS_COMP_CLAIM_NUMBER: { gliner_aliases: ["workers compensation claim", "workers comp claim number", "workplace injury claim"], threshold: 0.40 }
+  INVESTMENT_ACCOUNT_NUMBER: { gliner_aliases: ["brokerage account", "securities account", "mutual fund account", "ira account number", "401k account number", "403b account", "457 plan account", "hsa number", "esa number", "529 plan account", "pension plan number", "annuity contract number", "trust account number", "margin account number"], threshold: 0.35 }
+  CUSIP_NUMBER: { gliner_aliases: ["cusip number", "cusip", "security identifier", "stock certificate number"], threshold: 0.40 }
+  MORTGAGE_LOAN_INFO: { gliner_aliases: ["mortgage number", "loan number", "auto loan number", "student loan number", "personal loan number", "heloc account", "promissory note number", "loan application number", "sba loan number"], threshold: 0.35 }
+  CREDIT_REPORT_ID: { gliner_aliases: ["credit report file number", "credit bureau consumer id", "equifax consumer id", "experian consumer id", "transunion consumer id", "credit monitoring account"], threshold: 0.40 }
+  FICO_SCORE: { gliner_aliases: ["fico score", "credit score", "bureau score"], threshold: 0.40 }
+  CREDIT_FREEZE_PIN: { gliner_aliases: ["credit freeze pin", "credit freeze password", "fraud alert confirmation number"], threshold: 0.40 }
+  DIGITAL_PAYMENT_ACCOUNT: { gliner_aliases: ["paypal account", "venmo handle", "zelle account", "cash app cashtag", "apple pay account", "google pay token"], threshold: 0.40 }
+  WIRE_TRANSFER_REFERENCE: { gliner_aliases: ["wire transfer reference", "wire transfer number", "ach authorization number", "money order serial number"], threshold: 0.40 }
+  GIFT_CARD_NUMBER: { gliner_aliases: ["gift card number", "prepaid gift card number", "gift card pin"], threshold: 0.40 }
+  TAX_RETURN_DATA: { gliner_aliases: ["tax return data", "w-2 information", "1099 form data", "adjusted gross income", "tax transcript", "tax lien number"], threshold: 0.45 }
+  PROPERTY_TAX_PARCEL: { gliner_aliases: ["property tax parcel number", "parcel number", "title number", "deed number"], threshold: 0.40 }
+  ESCROW_ACCOUNT_NUMBER: { gliner_aliases: ["escrow account number", "escrow account"], threshold: 0.40 }
+  FINRA_CRD_NUMBER: { gliner_aliases: ["finra crd number", "crd number", "registered representative number"], threshold: 0.40 }
+  BANKRUPTCY_CASE_NUMBER: { gliner_aliases: ["bankruptcy case number", "chapter 7 case", "chapter 11 case", "chapter 13 case"], threshold: 0.40 }
+  CHILD_SUPPORT_CASE_NUMBER: { gliner_aliases: ["child support case number", "child support account", "alimony account number"], threshold: 0.40 }
+
+amex_specific:
+  ACCOUNT_NUMBER_AMEX: { gliner_aliases: ["credit card number", "account number", "amex account number"], threshold: 0.25 }
+  AMEX_ACCOUNT_ID: { gliner_aliases: ["account id", "amex account id"], threshold: 0.35 }
+  CARDMEMBER_ID: { gliner_aliases: ["cardmember id", "legacy cardmember id"], threshold: 0.35 }
+  CUSTOMER_ID: { gliner_aliases: ["customer id", "global customer id"], threshold: 0.35 }
+  MR_NUMBER: { gliner_aliases: ["membership rewards number", "mr number", "master mr id"], threshold: 0.35 }
+  PAR_ID: { gliner_aliases: ["payment account reference", "par", "par id"], threshold: 0.35 }
+  NETWORK_TOKEN_ID: { gliner_aliases: ["network token id", "token id", "token reference"], threshold: 0.35 }
+  TRACK_DATA: { gliner_aliases: ["track data", "track 2", "magstripe data"], threshold: 0.35 }
+  TRACK_LOG_ID: { gliner_aliases: ["track log id", "internal ref"], threshold: 0.35 }
+  EMPLOYEE_ID: { gliner_aliases: ["employee id", "amex employee id", "badge number"], threshold: 0.35 }
+  SECURITY_QUESTION: { gliner_aliases: ["security question", "challenge question"], threshold: 0.40 }
+  SECURITY_ANSWER: { gliner_aliases: ["security answer", "stored answer"], threshold: 0.40 }
+  MOTHERS_MAIDEN_NAME: { gliner_aliases: ["mother's maiden name", "mothers maiden name"], threshold: 0.40 }
+  PIN: { gliner_aliases: ["pin", "portal access pin", "ivr pin", "card pin"], threshold: 0.35 }
+  ONE_TIME_CODE: { gliner_aliases: ["one-time code", "otp", "backup code", "verification code"], threshold: 0.35 }
+  PRECISE_GEOLOCATION: { gliner_aliases: ["precise geolocation", "gps coordinates", "logged location", "latitude longitude"], threshold: 0.40 }
+  DEVICE_APP_DATA: { gliner_aliases: ["device id", "device token", "advertising id", "mac address", "imei", "meid", "esn", "udid"], threshold: 0.35 }
+  REFERENCE_IDENTIFIER: { gliner_aliases: ["reference number", "reference identifier", "secure message id"], threshold: 0.35 }
+  BAND_LEVEL: { gliner_aliases: ["band level", "job band", "employee level"], threshold: 0.45 }
+  PERFORMANCE_RATING: { gliner_aliases: ["performance rating", "review rating", "performance review"], threshold: 0.45 }
+  OPINIONS_CAPTURED: { gliner_aliases: ["subjective opinion", "customer complaint", "personal statement"], threshold: 0.45 }
+  PARTNER_ACCOUNT_NUMBER: { gliner_aliases: ["loyalty number", "frequent flyer number", "hotel rewards number", "partner account"], threshold: 0.35 }
+  TICKET_NUMBER: { gliner_aliases: ["ticket number", "record locator", "flight confirmation"], threshold: 0.35 }
+  AUTHORIZED_AGENT_INFO: { gliner_aliases: ["authorized agent", "program administrator", "account manager"], threshold: 0.45 }
+  HIGH_VALUE_INDICATOR: { gliner_aliases: ["high value card member", "centurion member", "vip status"], threshold: 0.45 }
+  MARKETING_PREFERENCES: { gliner_aliases: ["do not call", "dnc", "marketing opt-out", "privacy preference"], threshold: 0.40 }
+  ROC_DATA: { gliner_aliases: ["record of charge", "roc data", "charge record"], threshold: 0.35 }
+  SOLE_TRADER_DATA: { gliner_aliases: ["sole trader", "proprietorship", "proprietor business"], threshold: 0.45 }
+
+# ── TIER 2: Medical, Education, Employment, Digital Security ──────────
+
+medical:
+  MEDICAL_RECORD_NUMBER: { gliner_aliases: ["medical record number", "mrn", "patient id", "medical chart number"], threshold: 0.35 }
+  MEDICARE_MEDICAID_ID: { gliner_aliases: ["medicare beneficiary identifier", "mbi", "medicaid id", "medicare id", "medicare number"], threshold: 0.35 }
+  HEALTH_PLAN_BENEFICIARY_NUMBER: { gliner_aliases: ["health plan beneficiary number", "subscriber id", "plan member number"], threshold: 0.40 }
+  PRESCRIPTION_NUMBER: { gliner_aliases: ["prescription number", "rx number", "prescription id"], threshold: 0.40 }
+  LAB_ACCESSION_NUMBER: { gliner_aliases: ["lab accession number", "lab order number", "laboratory id", "specimen id"], threshold: 0.40 }
+  CLINICAL_TRIAL_ID: { gliner_aliases: ["clinical trial id", "clinical trial subject id", "trial participant number"], threshold: 0.40 }
+  MEDICAL_DEVICE_SERIAL: { gliner_aliases: ["medical device serial number", "implant serial number", "device udi"], threshold: 0.40 }
+
+education:
+  STUDENT_ID: { gliner_aliases: ["student id", "student number", "student identification number"], threshold: 0.40 }
+  FAFSA_DATA: { gliner_aliases: ["fafsa id", "student aid index", "financial aid data", "student aid id"], threshold: 0.45 }
+  TRANSCRIPT: { gliner_aliases: ["academic transcript", "education transcript", "grade record", "disciplinary record"], threshold: 0.45 }
+
+employment:
+  PAYROLL_NUMBER: { gliner_aliases: ["payroll number", "payroll id", "pay stub number", "personnel file number"], threshold: 0.40 }
+  BACKGROUND_CHECK_REFERENCE: { gliner_aliases: ["background check reference", "background screening number", "screening report id"], threshold: 0.40 }
+  I9_EMPLOYMENT_DATA: { gliner_aliases: ["i-9 data", "employment eligibility", "work authorization data"], threshold: 0.45 }
+  E_VERIFY_CASE_NUMBER: { gliner_aliases: ["e-verify case number", "e-verify id", "everify case number"], threshold: 0.40 }
+  SECURITY_CLEARANCE: { gliner_aliases: ["security clearance", "clearance level", "top secret clearance", "secret clearance"], threshold: 0.45 }
+  OCCUPATIONAL_CERTIFICATION: { gliner_aliases: ["occupational certification", "professional certification", "trade certification"], threshold: 0.45 }
+
+digital_security:
+  API_KEY: { gliner_aliases: ["api key", "api token", "api secret", "access key id"], threshold: 0.40 }
+  SSH_KEY: { gliner_aliases: ["ssh key", "ssh public key", "ssh private key", "ssh fingerprint"], threshold: 0.40 }
+  PGP_KEY: { gliner_aliases: ["pgp key", "pgp fingerprint", "gpg key", "gpg fingerprint"], threshold: 0.40 }
+  DIGITAL_CERTIFICATE: { gliner_aliases: ["digital certificate", "ssl certificate", "x509 certificate", "certificate fingerprint"], threshold: 0.40 }
+  BROWSER_FINGERPRINT: { gliner_aliases: ["browser fingerprint", "device fingerprint", "canvas fingerprint"], threshold: 0.45 }
+
+# ── TIER 3: Vehicle, Legal/Criminal, Utility, Contextual ──────────────
+
+vehicle_property:
+  VIN: { gliner_aliases: ["vehicle identification number", "vin", "vin number"], threshold: 0.35 }
+  LICENSE_PLATE_NUMBER: { gliner_aliases: ["license plate number", "plate number", "vehicle plate", "tag number"], threshold: 0.35 }
+  VEHICLE_REGISTRATION_NUMBER: { gliner_aliases: ["vehicle registration number", "vehicle registration", "vehicle title number"], threshold: 0.40 }
+  BOAT_HULL_ID: { gliner_aliases: ["hull identification number", "hin", "boat registration number", "watercraft id"], threshold: 0.40 }
+  AIRCRAFT_REGISTRATION: { gliner_aliases: ["aircraft registration", "n-number", "tail number", "faa pilot certificate number"], threshold: 0.40 }
+
+legal_criminal:
+  COURT_CASE_NUMBER: { gliner_aliases: ["court case number", "docket number", "civil lawsuit docket number"], threshold: 0.40 }
+  ARREST_BOOKING_NUMBER: { gliner_aliases: ["arrest record number", "booking number", "arrest number"], threshold: 0.40 }
+  INMATE_OFFENDER_ID: { gliner_aliases: ["inmate id", "offender id", "prisoner number", "inmate number"], threshold: 0.40 }
+  PROBATION_PAROLE_ID: { gliner_aliases: ["probation id", "parole id", "probation number", "parole number"], threshold: 0.40 }
+  FBI_NUMBER: { gliner_aliases: ["fbi number", "fbi file number"], threshold: 0.40 }
+  STATE_CRIMINAL_ID: { gliner_aliases: ["state criminal id", "sid number", "state criminal identification"], threshold: 0.40 }
+  PROTECTIVE_ORDER_NUMBER: { gliner_aliases: ["protective order number", "restraining order number", "protection order number"], threshold: 0.40 }
+  SEX_OFFENDER_REGISTRY: { gliner_aliases: ["sex offender registry", "sex offender registration"], threshold: 0.45 }
+
+communication_utility:
+  UTILITY_ACCOUNT_NUMBER: { gliner_aliases: ["utility account number", "electric account number", "gas account number", "water account number"], threshold: 0.40 }
+  CABLE_INTERNET_ACCOUNT: { gliner_aliases: ["cable account number", "internet subscriber account", "isp account number", "broadband account"], threshold: 0.40 }
+  SHIPPING_TRACKING_NUMBER: { gliner_aliases: ["shipping tracking number", "tracking number", "ups tracking", "fedex tracking", "usps tracking"], threshold: 0.40 }
+  CDR_CALL_DETAIL_RECORD: { gliner_aliases: ["call detail record", "cdr", "phone record", "telephone record"], threshold: 0.45 }
 
 contextual:
-  BIOMETRIC_INFORMATION: { gliner_aliases: ["biometric", "voiceprint", "fingerprint", "faceprint"] }
-  CHILDBEARING_STATUS: { gliner_aliases: ["pregnant", "pregnancy", "maternity", "childbearing"] }
-  CRIMINAL_RECORD: { gliner_aliases: ["criminal record", "misdemeanor", "felony", "conviction", "traffic violation"] }
-  DISABILITY_STATUS: { gliner_aliases: ["disability", "accessibility accommodation", "disabled"] }
-  PHI: { gliner_aliases: ["health condition", "diagnosis", "disease", "medical diagnosis", "diabetes", "macular degeneration"] }
-  GENETIC_INFORMATION: { gliner_aliases: ["genetic information", "dna profile", "genetic test"] }
-  ETHNICITY_OR_RACE: { gliner_aliases: ["ethnicity", "race", "hispanic", "latino", "caucasian", "asian"] }
-  INCOME: { gliner_aliases: ["income", "salary", "wages", "household income"] }
-  NATIONALITY: { gliner_aliases: ["citizenship", "dual citizenship", "country of origin", "nationality"] }
-  POLITICAL_OPINIONS: { gliner_aliases: ["political party", "registered voter", "political action committee", "independent", "democrat", "republican"] }
-  RELIGION: { gliner_aliases: ["religious faith", "kosher", "jewish", "christian", "muslim"] }
-  SEXUAL_ORIENTATION: { gliner_aliases: ["sexual orientation", "same-sex partner", "domestic partner"] }
-  LEGAL_JUDGEMENT: { gliner_aliases: ["legal judgement", "garnishment", "court order", "civil court"] }
-  LEAVE_OF_ABSENCE_TYPE: { gliner_aliases: ["leave of absence", "medical leave", "parental leave"] }
-  MARITAL_OR_FAMILIAL_STATUS: { gliner_aliases: ["marital status", "divorced", "married", "domestic partner"] }
-  EMERGENCY_CONTACT_INFORMATION: { gliner_aliases: ["emergency contact", "emergency contact info"] }
-  OCCUPATION: { gliner_aliases: ["occupation", "job title", "profession"] }
-  PUBLIC_ASSISTANCE_RECEIPT: { gliner_aliases: ["child support", "alimony", "public assistance", "welfare"] }
-  CHILDREN_INFORMATION: { gliner_aliases: ["minor child", "child age"] }
-  MEMBERSHIP_OR_TRADE_UNIONS: { gliner_aliases: ["trade union", "union member"] }
-  CUSTOMER_PURCHASE_DATA: { gliner_aliases: ["transaction data", "purchase history", "bought at", "store"] }
-  SOCIAL_MEDIA_PROFILE: { gliner_aliases: ["social media profile", "linkedin handle", "facebook profile"] }
-  EMPLOYER_NAME: { gliner_aliases: ["employer name", "company name", "organization"] }
-  ONLINE_UNIQUE_IDENTIFIER: { gliner_aliases: ["tracking cookie", "cookie id", "pixel id", "session token"] }
-  EDUCATIONAL_AFFILIATIONS: { gliner_aliases: ["education level", "university attended", "degree", "graduated from"] }
-  EMPLOYMENT_HISTORY: { gliner_aliases: ["previous employer", "employment history", "past job"] }
-  MORTGAGE_LOAN_INFO: { gliner_aliases: ["mortgage number", "loan number", "auto loan"] }
-  PHOTOGRAPH_METADATA: { gliner_aliases: ["exif data", "photo metadata", "image location"] }
-  CARD_TYPE: { gliner_aliases: ["card type", "platinum card", "centurion card", "gold card"] }
-  CHARITABLE_CONTRIBUTION: { gliner_aliases: ["charitable contribution", "donation", "charity"] }
-  CUSTOMER_STATUS: { gliner_aliases: ["customer status", "account status", "delinquent", "deceased"] }
-  PAYMENT_HISTORY: { gliner_aliases: ["payment history", "past due", "late payment", "collections"] }
-  RETIREMENT_DATE: { gliner_aliases: ["retirement date", "retired on"] }
-  SEPARATION_DATE: { gliner_aliases: ["separation date", "termination date", "fired on"] }
-  VETERAN_STATUS: { gliner_aliases: ["veteran status", "military veteran", "active duty"] }
+  BIOMETRIC_INFORMATION: { gliner_aliases: ["biometric", "voiceprint", "fingerprint", "faceprint", "palm print", "retina scan", "iris scan", "facial geometry", "vein pattern", "gait analysis", "keystroke dynamics"], threshold: 0.45 }
+  CHILDBEARING_STATUS: { gliner_aliases: ["pregnant", "pregnancy", "maternity", "childbearing"], threshold: 0.45 }
+  CRIMINAL_RECORD: { gliner_aliases: ["criminal record", "misdemeanor", "felony", "conviction"], threshold: 0.45 }
+  DISABILITY_STATUS: { gliner_aliases: ["disability", "accessibility accommodation", "disabled"], threshold: 0.45 }
+  PHI: { gliner_aliases: ["health condition", "diagnosis", "disease", "medical diagnosis"], threshold: 0.45 }
+  GENETIC_INFORMATION: { gliner_aliases: ["genetic information", "dna profile", "genetic test", "dna sample"], threshold: 0.45 }
+  ETHNICITY_OR_RACE: { gliner_aliases: ["ethnicity", "race"], threshold: 0.45 }
+  INCOME: { gliner_aliases: ["income", "salary", "wages", "household income"], threshold: 0.40 }
+  NATIONALITY: { gliner_aliases: ["citizenship", "dual citizenship", "country of origin", "nationality"], threshold: 0.45 }
+  POLITICAL_OPINIONS: { gliner_aliases: ["political party", "registered voter", "political action committee"], threshold: 0.45 }
+  RELIGION: { gliner_aliases: ["religious faith", "kosher", "jewish", "christian", "muslim"], threshold: 0.45 }
+  SEXUAL_ORIENTATION: { gliner_aliases: ["sexual orientation", "same-sex partner", "domestic partner"], threshold: 0.45 }
+  LEGAL_JUDGEMENT: { gliner_aliases: ["legal judgement", "garnishment", "court order", "civil court", "tax lien"], threshold: 0.40 }
+  LEAVE_OF_ABSENCE_TYPE: { gliner_aliases: ["leave of absence", "medical leave", "parental leave"], threshold: 0.40 }
+  MARITAL_OR_FAMILIAL_STATUS: { gliner_aliases: ["marital status", "divorced", "married", "domestic partner"], threshold: 0.40 }
+  EMERGENCY_CONTACT_INFORMATION: { gliner_aliases: ["emergency contact", "emergency contact info", "next of kin"], threshold: 0.40 }
+  OCCUPATION: { gliner_aliases: ["occupation", "job title", "profession"], threshold: 0.40 }
+  PUBLIC_ASSISTANCE_RECEIPT: { gliner_aliases: ["child support", "alimony", "public assistance", "welfare", "food stamps"], threshold: 0.40 }
+  CHILDREN_INFORMATION: { gliner_aliases: ["minor child", "child age", "dependent child"], threshold: 0.40 }
+  MEMBERSHIP_OR_TRADE_UNIONS: { gliner_aliases: ["trade union", "union member", "labor union", "union membership"], threshold: 0.40 }
+  CUSTOMER_PURCHASE_DATA: { gliner_aliases: ["transaction data", "purchase history"], threshold: 0.50 }
+  SOCIAL_MEDIA_PROFILE: { gliner_aliases: ["social media profile", "linkedin handle", "facebook profile"], threshold: 0.40 }
+  EMPLOYER_NAME: { gliner_aliases: ["employer name", "company name", "organization"], threshold: 0.40 }
+  ONLINE_UNIQUE_IDENTIFIER: { gliner_aliases: ["tracking cookie", "cookie id", "pixel id", "session token", "advertising identifier"], threshold: 0.40 }
+  EDUCATIONAL_AFFILIATIONS: { gliner_aliases: ["education level", "university attended", "degree"], threshold: 0.40 }
+  EMPLOYMENT_HISTORY: { gliner_aliases: ["previous employer", "employment history", "past job"], threshold: 0.40 }
+  PHOTOGRAPH_METADATA: { gliner_aliases: ["exif data", "photo metadata", "image location"], threshold: 0.40 }
+  CHARITABLE_CONTRIBUTION: { gliner_aliases: ["charitable contribution", "donation", "charity"], threshold: 0.40 }
+  CUSTOMER_STATUS: { gliner_aliases: ["customer status", "account status", "delinquent", "deceased"], threshold: 0.40 }
+  PAYMENT_HISTORY: { gliner_aliases: ["payment history", "past due", "late payment", "collections"], threshold: 0.40 }
+  RETIREMENT_DATE: { gliner_aliases: ["retirement date", "retired on"], threshold: 0.40 }
+  SEPARATION_DATE: { gliner_aliases: ["separation date", "termination date", "fired on"], threshold: 0.40 }
+  VETERAN_STATUS: { gliner_aliases: ["veteran status", "military veteran", "active duty"], threshold: 0.40 }
 
 fallback:
-  UNKNOWN_PII: { gliner_aliases: ["pii", "sensitive data", "secret"] }
-
+  UNKNOWN_PII: { gliner_aliases: ["pii", "sensitive data", "secret"], threshold: 0.50 }

@@ -1,3 +1,10 @@
+# ======================================================================
+# FIELD PATTERNS — Structured "Label: Value" detection
+# Requires explicit separator (: = -) to avoid conversational matches
+# ======================================================================
+
+# -- GENERAL PERSONAL --
+
 PERSON_FULL_NAME:
   - Full Legal Name
   - Customer Name (legal)
@@ -7,13 +14,24 @@ PERSON_FULL_NAME:
   - Embossed Name
   - Individual's Name (Full)
   - Secondary Subject (Full)
+  - Full Name
+  - Legal Name
+  - Applicant Name
+  - Beneficiary Name
 
 PERSON_FIRST_NAME:
   - First Name
   - Individual's Name (First)
+  - Given Name
+
+PERSON_MIDDLE_NAME:
+  - Middle Name
+  - Middle Initial
 
 PERSON_LAST_NAME:
   - Last Name
+  - Surname
+  - Family Name
 
 EMAIL_ADDRESS:
   - Email
@@ -22,6 +40,8 @@ EMAIL_ADDRESS:
   - Alternate Email
   - Work Email
   - Email Addresses
+  - Email Address
+  - Contact Email
 
 PHONE_NUMBER:
   - Phone
@@ -30,25 +50,87 @@ PHONE_NUMBER:
   - Work Phone
   - Service Phone
   - Phone Numbers
+  - Phone Number
+  - Cell Phone
+  - Contact Number
+  - Telephone
+  - Fax
 
 STREET_ADDRESS:
   - Address
   - Billing Address
   - Home Address
   - Street Address
+  - Mailing Address
+  - Shipping Address
+  - Physical Address
+  - Residential Address
 
 DATE_OF_BIRTH:
   - DOB
   - Date of Birth
+  - Birth Date
+  - Birthdate
+
+AGE:
+  - Age
+  - Customer Age
+
+GENDER:
+  - Gender
+  - Sex
 
 USERNAME:
   - Username
   - Online Account
   - User Name
+  - Login ID
+  - User ID
+
+# -- IDENTITY / GOVERNMENT --
 
 SSN:
   - Social Security Number
   - Full SSN on File
+  - SSN
+
+TAX_ID:
+  - Tax ID
+  - ITIN
+  - EIN
+  - Tax Identification Number
+  - Employer Identification Number
+
+DRIVERS_LICENSE_NUMBER:
+  - Driver's License
+  - Drivers License
+  - Driver's license
+  - License Number
+  - DL Number
+
+PASSPORT_NUMBER:
+  - Passport Number
+  - U.S. Passport
+  - Passport
+
+GREEN_CARD_NUMBER:
+  - Green Card Number
+  - Alien Registration Number
+  - Resident Card Number
+  - A-Number
+
+NATIONAL_ID:
+  - National ID
+  - National Identification Number
+  - National ID Number
+
+NON_DRIVERS_ID:
+  - State ID
+  - Military ID
+  - Non-Driver ID
+  - State Identification
+
+# -- FINANCIAL --
 
 ACCOUNT_NUMBER_AMEX:
   - Account Number (AMEX)
@@ -65,10 +147,12 @@ AMEX_ACCOUNT_ID:
 
 CARDMEMBER_ID:
   - Legacy Cardmember ID
+  - Cardmember ID
 
 CUSTOMER_ID:
   - Customer ID
   - Customer ID (Global)
+  - Client ID
 
 MR_NUMBER:
   - MR Account Number
@@ -78,10 +162,12 @@ MR_NUMBER:
 
 PAR_ID:
   - PAR-ID
+  - Payment Account Reference
 
 NETWORK_TOKEN_ID:
   - Token ID
   - TokenRefID
+  - Network Token ID
 
 TRACK_DATA:
   - Track Data
@@ -90,15 +176,114 @@ TRACK_DATA:
 
 TRACK_LOG_ID:
   - Internal Ref
+  - Track Log ID
+
+BANK_ACCOUNT_NUMBER:
+  - Banking Account Number
+  - Account
+  - Bank Account Number
+  - Checking Account
+  - Savings Account
+
+ROUTING_NUMBER:
+  - Routing
+  - Routing Number
+  - ABA Routing
+
+CARD_EXPIRATION_DATE:
+  - Expires
+  - Expiration
+  - Exp Date
+  - Expiration Date
+
+CARD_SECURITY_CODE:
+  - CID
+  - CVV
+  - CVC
+  - Security Code
+
+CREDIT_CARD_NUMBER:
+  - Card Number
+  - Credit Card Number
+
+IBAN:
+  - IBAN
+  - International Bank Account Number
+
+INSURANCE_POLICY:
+  - Policy Number
+  - Insurance Policy
+  - Insurance ID
+
+MORTGAGE_LOAN_INFO:
+  - Mortgage Number
+  - Loan Number
+  - Loan ID
+  - Auto Loan Number
+
+FICO_SCORE:
+  - FICO Score
+  - Credit Score
+
+INCOME:
+  - Annual Income
+  - Household Income
+  - Salary
+  - Monthly Income
+  - Gross Income
+
+# -- EMPLOYEE / HR --
 
 EMPLOYEE_ID:
   - Employee ID
   - Amex Employee ID
   - Employee ID / Employer Name
+  - Badge Number
+
+BAND_LEVEL:
+  - Band Level
+  - Job Band
+  - Employee Level
+
+PERFORMANCE_RATING:
+  - Performance Rating
+  - Review Rating
+  - Performance Score
+
+OCCUPATION:
+  - Occupation
+  - Job Title
+  - Position
+  - Role
+  - Profession
+
+EMPLOYER_NAME:
+  - Employer
+  - Employer Name
+  - Company Name
+  - Organization
+
+RETIREMENT_DATE:
+  - Retirement Date
+  - Retired On
+
+SEPARATION_DATE:
+  - Separation Date
+  - Termination Date
+  - Last Day
+  - End Date
+
+LEAVE_OF_ABSENCE_TYPE:
+  - Leave Type
+  - Leave of Absence
+  - LOA Type
+
+# -- SECURITY --
 
 MOTHERS_MAIDEN_NAME:
   - Mother's maiden name
-  - Mother’s maiden name
+  - Mother's maiden name
+  - Maiden Name
 
 SECURITY_QUESTION:
   - Security Question
@@ -120,12 +305,23 @@ ONE_TIME_CODE:
   - One-Time Code
   - Backup One-Time Code
   - 6-Digit One-Time Code
+  - OTP
+  - Verification Code
+
+PASSWORD:
+  - Password
+  - Passcode
+  - Passphrase
+
+# -- DEVICE / LOCATION --
 
 PRECISE_GEOLOCATION:
   - GPS coordinates
   - Logged Location
   - Precise Geo
   - Precise Geolocation
+  - Coordinates
+  - Latitude/Longitude
 
 DEVICE_APP_DATA:
   - Device Name
@@ -134,42 +330,507 @@ DEVICE_APP_DATA:
   - Device Advertising ID
   - Device Token
   - Device/App Data
+  - MAC Address
+  - IMEI
 
 IP_ADDRESS:
   - IP Address
   - System IP Address
+  - IPv4 Address
+  - IPv6 Address
 
-DRIVERS_LICENSE_NUMBER:
-  - Driver's License
-  - Drivers License
-  - Driver’s license
-
-PASSPORT_NUMBER:
-  - Passport Number
-  - U.S. Passport
+# -- CONTACT / REFERENCE --
 
 EMERGENCY_CONTACT_INFORMATION:
   - Emergency Contact
+  - Emergency Contact Name
+  - Emergency Contact Phone
+  - Next of Kin
 
 REFERENCE_IDENTIFIER:
   - Reference
   - Reference Code
   - Secure Message ID
+  - Reference Number
+  - Case ID
 
-BANK_ACCOUNT_NUMBER:
-  - Banking Account Number
-  - Account
+# -- CONTEXTUAL / SENSITIVE --
 
-ROUTING_NUMBER:
-  - Routing
-  - Routing Number
+MARITAL_OR_FAMILIAL_STATUS:
+  - Marital Status
+  - Family Status
 
-CARD_EXPIRATION_DATE:
-  - Expires
-  - Expiration
+VETERAN_STATUS:
+  - Veteran Status
+  - Military Status
+  - Service Status
 
-CARD_SECURITY_CODE:
-  - CID
-  - CVV
-  - CVC
-  - Security Code
+DISABILITY_STATUS:
+  - Disability Status
+  - ADA Accommodation
+  - Accessibility Need
+
+ETHNICITY_OR_RACE:
+  - Ethnicity
+  - Race
+  - Ethnic Background
+
+NATIONALITY:
+  - Nationality
+  - Citizenship
+  - Country of Origin
+
+RELIGION:
+  - Religion
+  - Religious Affiliation
+  - Faith
+
+POLITICAL_OPINIONS:
+  - Political Affiliation
+  - Political Party
+  - Voter Registration
+
+EDUCATIONAL_AFFILIATIONS:
+  - Education
+  - Degree
+  - University
+  - College
+  - School
+  - Education Level
+  - Highest Degree
+
+EMPLOYMENT_HISTORY:
+  - Previous Employer
+  - Employment History
+  - Work History
+  - Prior Employer
+
+CHILDREN_INFORMATION:
+  - Dependents
+  - Number of Children
+  - Child Name
+  - Minor Child
+
+CUSTOMER_STATUS:
+  - Customer Status
+  - Account Status
+  - Member Status
+
+MARKETING_PREFERENCES:
+  - Marketing Preference
+  - Communication Preference
+  - Opt-Out Status
+  - DNC Status
+
+SOCIAL_MEDIA_PROFILE:
+  - Social Media
+  - LinkedIn
+  - Facebook
+  - Twitter
+  - Instagram
+
+ONLINE_UNIQUE_IDENTIFIER:
+  - Session ID
+  - Cookie ID
+  - Tracking ID
+  - Pixel ID
+
+PHOTOGRAPH_METADATA:
+  - Photo Metadata
+  - EXIF Data
+  - Image Location
+
+# -- PLACE / LOCATION --
+
+PLACE_OF_BIRTH:
+  - Place of Birth
+  - Birth Place
+  - City of Birth
+  - Country of Birth
+  - Born In
+
+# -- GOVERNMENT (EXTENDED) --
+
+VISA_NUMBER:
+  - Visa Number
+  - Travel Visa
+  - Work Visa
+  - Visa ID
+
+SELECTIVE_SERVICE_NUMBER:
+  - Selective Service Number
+  - Selective Service
+
+VOTER_REGISTRATION_NUMBER:
+  - Voter Registration Number
+  - Voter ID
+  - Voter Registration
+
+KNOWN_TRAVELER_NUMBER:
+  - Known Traveler Number
+  - Global Entry Number
+  - TSA PreCheck Number
+  - NEXUS Number
+  - SENTRI Number
+  - KTN
+
+PROFESSIONAL_LICENSE_NUMBER:
+  - Bar Number
+  - Medical License Number
+  - CPA License
+  - Nursing License Number
+  - Professional License
+  - NPI
+  - NPI Number
+  - National Provider Identifier
+
+# -- FINANCIAL (EXTENDED) --
+
+SWIFT_BIC_CODE:
+  - SWIFT Code
+  - BIC Code
+  - SWIFT/BIC
+  - Bank Identifier Code
+
+INVESTMENT_ACCOUNT_NUMBER:
+  - Brokerage Account
+  - Securities Account
+  - Mutual Fund Account
+  - IRA Account Number
+  - 401(k) Account
+  - 403(b) Account
+  - 457 Plan Account
+  - HSA Number
+  - ESA Number
+  - 529 Plan Account
+  - Pension Plan Number
+  - Annuity Contract Number
+  - Trust Account Number
+  - Margin Account Number
+  - Stock Certificate Number
+
+CUSIP_NUMBER:
+  - CUSIP
+  - CUSIP Number
+
+CREDIT_REPORT_ID:
+  - Credit Report File Number
+  - Credit Bureau Consumer ID
+  - Equifax ID
+  - Experian ID
+  - TransUnion ID
+  - Credit Monitoring Account
+
+CREDIT_FREEZE_PIN:
+  - Credit Freeze PIN
+  - Credit Freeze Password
+  - Fraud Alert Confirmation
+
+EBT_CARD_NUMBER:
+  - EBT Card Number
+  - EBT Card
+
+DIGITAL_PAYMENT_ACCOUNT:
+  - PayPal Account
+  - PayPal Email
+  - Venmo Handle
+  - Venmo Account
+  - Zelle Account
+  - Zelle Email
+  - Cash App
+  - Cashtag
+  - Apple Pay
+  - Google Pay
+
+WIRE_TRANSFER_REFERENCE:
+  - Wire Transfer Reference
+  - Wire Transfer Number
+  - ACH Authorization
+  - Money Order Serial Number
+
+GIFT_CARD_NUMBER:
+  - Gift Card Number
+  - Gift Card PIN
+  - Prepaid Gift Card
+
+TAX_RETURN_DATA:
+  - W-2 Information
+  - 1099 Data
+  - Adjusted Gross Income
+  - Tax Transcript
+  - Tax Lien Number
+  - State Tax Account
+
+PROPERTY_TAX_PARCEL:
+  - Parcel Number
+  - Tax Parcel Number
+  - Title Number
+  - Deed Number
+  - Property Tax Parcel
+
+ESCROW_ACCOUNT_NUMBER:
+  - Escrow Account Number
+  - Escrow Account
+
+FINRA_CRD_NUMBER:
+  - CRD Number
+  - FINRA CRD Number
+
+BANKRUPTCY_CASE_NUMBER:
+  - Bankruptcy Case Number
+  - Chapter 7 Case
+  - Chapter 11 Case
+  - Chapter 13 Case
+
+CHILD_SUPPORT_CASE_NUMBER:
+  - Child Support Case Number
+  - Child Support Account
+  - Alimony Account Number
+
+HEALTH_INSURANCE_ID:
+  - Health Insurance ID
+  - Health Plan ID
+  - Health Plan Beneficiary Number
+  - Health Insurance Claim Number
+
+WORKERS_COMP_CLAIM_NUMBER:
+  - Workers Comp Claim Number
+  - Workers Compensation Claim
+  - Workplace Injury Claim
+
+# -- MEDICAL / HIPAA --
+
+MEDICAL_RECORD_NUMBER:
+  - Medical Record Number
+  - MRN
+  - Patient ID
+  - Chart Number
+
+MEDICARE_MEDICAID_ID:
+  - Medicare ID
+  - Medicare Number
+  - Medicare Beneficiary Identifier
+  - Medicare Beneficiary ID
+  - MBI
+  - Medicaid ID
+  - Medicaid Number
+
+HEALTH_PLAN_BENEFICIARY_NUMBER:
+  - Health Plan Beneficiary Number
+  - Subscriber ID
+  - Plan Member Number
+  - Member ID
+  - Pharmacy Benefit ID
+
+PRESCRIPTION_NUMBER:
+  - Prescription Number
+  - Rx Number
+  - Prescription ID
+
+LAB_ACCESSION_NUMBER:
+  - Lab Accession Number
+  - Lab Order Number
+  - Specimen ID
+
+CLINICAL_TRIAL_ID:
+  - Clinical Trial ID
+  - Trial Subject ID
+  - Trial Participant Number
+
+MEDICAL_DEVICE_SERIAL:
+  - Medical Device Serial Number
+  - Implant Serial Number
+  - Device UDI
+
+# -- EDUCATION / FERPA --
+
+STUDENT_ID:
+  - Student ID
+  - Student Number
+  - Student Identification
+
+FAFSA_DATA:
+  - FAFSA ID
+  - Student Aid Index
+  - Student Aid ID
+  - Financial Aid ID
+
+TRANSCRIPT:
+  - Academic Transcript
+  - Education Transcript
+  - Grade Record
+  - Disciplinary Record
+
+# -- EMPLOYMENT (EXTENDED) --
+
+PAYROLL_NUMBER:
+  - Payroll Number
+  - Payroll ID
+  - Pay Stub Number
+  - Personnel File Number
+
+BACKGROUND_CHECK_REFERENCE:
+  - Background Check Reference
+  - Screening Report ID
+  - Background Screening Number
+
+I9_EMPLOYMENT_DATA:
+  - I-9 Data
+  - Employment Eligibility
+  - Work Authorization
+
+E_VERIFY_CASE_NUMBER:
+  - E-Verify Case Number
+  - E-Verify ID
+
+SECURITY_CLEARANCE:
+  - Security Clearance
+  - Clearance Level
+  - Security Clearance Level
+
+OCCUPATIONAL_CERTIFICATION:
+  - Occupational Certification
+  - Professional Certification
+  - Trade Certification
+
+# -- DIGITAL SECURITY --
+
+API_KEY:
+  - API Key
+  - API Token
+  - API Secret
+  - Access Key
+
+SSH_KEY:
+  - SSH Key
+  - SSH Public Key
+  - SSH Private Key
+
+PGP_KEY:
+  - PGP Key
+  - PGP Fingerprint
+  - GPG Key
+
+DIGITAL_CERTIFICATE:
+  - Digital Certificate
+  - SSL Certificate
+  - Certificate Fingerprint
+
+BROWSER_FINGERPRINT:
+  - Browser Fingerprint
+  - Device Fingerprint
+  - Canvas Fingerprint
+
+# -- VEHICLE & PROPERTY --
+
+VIN:
+  - VIN
+  - Vehicle Identification Number
+  - VIN Number
+
+LICENSE_PLATE_NUMBER:
+  - License Plate
+  - Plate Number
+  - Tag Number
+  - License Plate Number
+
+VEHICLE_REGISTRATION_NUMBER:
+  - Vehicle Registration Number
+  - Vehicle Registration
+  - Vehicle Title Number
+
+BOAT_HULL_ID:
+  - Hull Identification Number
+  - HIN
+  - Boat Registration Number
+
+AIRCRAFT_REGISTRATION:
+  - Aircraft Registration
+  - N-Number
+  - Tail Number
+  - FAA Pilot Certificate
+
+# -- LEGAL & CRIMINAL --
+
+COURT_CASE_NUMBER:
+  - Court Case Number
+  - Docket Number
+  - Case Number
+  - Civil Lawsuit Docket
+  - Report Number
+  - Police Report Number
+  - Incident Report Number
+  - PD Report Number
+
+ARREST_BOOKING_NUMBER:
+  - Arrest Record Number
+  - Booking Number
+
+INMATE_OFFENDER_ID:
+  - Inmate ID
+  - Offender ID
+  - Prisoner Number
+
+PROBATION_PAROLE_ID:
+  - Probation ID
+  - Parole ID
+  - Probation Number
+  - Parole Number
+
+FBI_NUMBER:
+  - FBI Number
+  - FBI File Number
+
+STATE_CRIMINAL_ID:
+  - State Criminal ID
+  - SID Number
+
+PROTECTIVE_ORDER_NUMBER:
+  - Protective Order Number
+  - Restraining Order Number
+
+# -- COMMUNICATION & UTILITY --
+
+UTILITY_ACCOUNT_NUMBER:
+  - Utility Account Number
+  - Electric Account
+  - Gas Account
+  - Water Account
+  - Sewer Account
+
+CABLE_INTERNET_ACCOUNT:
+  - Cable Account Number
+  - Internet Account
+  - ISP Account
+  - Broadband Account
+
+SHIPPING_TRACKING_NUMBER:
+  - Tracking Number
+  - Shipment Number
+  - UPS Tracking
+  - FedEx Tracking
+  - USPS Tracking
+
+CDR_CALL_DETAIL_RECORD:
+  - Call Detail Record
+  - CDR
+  - Phone Record
+
+# -- MISC --
+
+SIGNATURE:
+  - Signature
+  - Digital Signature
+  - Electronic Signature
+
+PHOTOGRAPH:
+  - Photograph
+  - Headshot
+  - Photo ID
+  - Profile Photo
+
+ALIAS_NICKNAME:
+  - Alias
+  - Nickname
+  - Also Known As
+  - AKA

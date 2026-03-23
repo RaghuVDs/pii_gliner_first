@@ -1,42 +1,216 @@
-security_keywords:
+# ======================================================================
+# CONTEXT RULES — Keyword patterns for contextual promotion/detection
+# Keys MUST be valid PII taxonomy labels (used by ContextDetector dynamic rules)
+# Values are regex patterns matched against the detection's neighborhood text
+#
+# New rules can be auto-promoted here by the Adaptive Learning system
+# (see app/adaptive_learning.py and pending_rules.yaml)
+# ======================================================================
+
+# -- SECURITY --
+MOTHERS_MAIDEN_NAME:
+  - mother's maiden name
+  - "mother\u2019s maiden name"
+  - maiden name
+
+SECURITY_QUESTION:
   - security question
   - challenge question
-  - stored answer
-  - mother's maiden name
-  - mother’s maiden name
-  - pin
-  - passcode
-  - password
-  - otp
-  - one-time code
-  - verification code
+  - primary question
+  - secondary question
 
-financial_keywords:
-  - account
-  - card
-  - amex
+SECURITY_ANSWER:
+  - stored answer
+  - security answer
+
+PASSWORD:
+  - password
+  - passcode
+  - passphrase
+
+PIN:
+  - \bpin\b
+  - passcode
+  - ivr
+  - portal access pin
+  - personal identification number
+
+ONE_TIME_CODE:
+  - one.?time
+  - \botp\b
+  - verification code
+  - backup code
+  - 2fa
+  - mfa
+
+# -- FINANCIAL --
+ROUTING_NUMBER:
   - routing
+  - \baba\b
+  - transit number
+
+BANK_ACCOUNT_NUMBER:
   - bank account
+  - checking account
+  - savings account
+  - account number
+  - acct\s*#
+
+CREDIT_CARD_NUMBER:
+  - credit card
+  - card number
+  - debit card
+
+ACCOUNT_NUMBER_AMEX:
+  - amex account
+  - american express account
+
+MR_NUMBER:
   - membership rewards
   - mr account
+  - mr number
+  - loyalty points
+
+TRACK_DATA:
   - track data
-  - payment
-  - transaction
+  - track 2
+  - magstripe
+  - magnetic stripe
 
-transaction_keywords:
-  - transaction
-  - spent at
-  - purchase
-  - posted
-  - charge
-  - payment
+CARD_SECURITY_CODE:
+  - \bcid\b
+  - \bcvv\b
+  - \bcvc\b
+  - security code
+  - card verification
 
-dob_keywords:
-  - dob
-  - date of birth
+CARD_EXPIRATION_DATE:
+  - expires
+  - expiration
+  - valid thru
+  - exp date
 
-geo_keywords:
-  - gps
-  - precise geolocation
-  - coordinates
+# -- IDENTITY --
+SSN:
+  - \bssn\b
+  - social security
+
+TAX_ID:
+  - \bitin\b
+  - tax id
+  - tax identification
+  - employer id
+  - \bein\b
+
+PASSPORT_NUMBER:
+  - passport
+  - travel document
+
+DRIVERS_LICENSE_NUMBER:
+  - driver's license
+  - drivers license
+  - license number
+  - \bdl\b
+
+# -- CONTACT --
+EMAIL_ADDRESS:
+  - email
+  - e-mail
+  - email address
+
+PHONE_NUMBER:
+  - phone
+  - mobile
+  - telephone
+  - cell phone
+  - contact number
+
+# -- LOCATION / DEVICE --
+PRECISE_GEOLOCATION:
+  - \bgps\b
   - logged location
+  - precise geo
+  - coordinates
+  - latitude
+  - longitude
+
+DEVICE_APP_DATA:
+  - device
+  - mac address
+  - advertising id
+  - device token
+  - device id
+  - \bimei\b
+
+IP_ADDRESS:
+  - ip address
+  - ipv4
+  - ipv6
+
+# -- PERSONAL --
+DATE_OF_BIRTH:
+  - \bdob\b
+  - date of birth
+  - birthdate
+  - born on
+
+AGE:
+  - \bage\b
+  - years old
+
+GENDER:
+  - gender
+  - \bsex\b
+
+# -- EMPLOYMENT --
+EMPLOYEE_ID:
+  - employee
+  - badge number
+  - employee id
+
+INCOME:
+  - salary
+  - annual income
+  - household income
+  - gross income
+  - monthly income
+
+OCCUPATION:
+  - occupation
+  - job title
+  - position
+  - profession
+
+# -- MEDICAL --
+MEDICAL_RECORD_NUMBER:
+  - medical record
+  - \bmrn\b
+  - patient id
+  - chart number
+
+PRESCRIPTION_NUMBER:
+  - prescription
+  - \brx\b
+
+# -- EDUCATION --
+STUDENT_ID:
+  - student id
+  - student number
+
+# -- VEHICLE --
+VIN:
+  - \bvin\b
+  - vehicle identification
+
+LICENSE_PLATE_NUMBER:
+  - license plate
+  - plate number
+  - tag number
+
+# -- BIOMETRIC --
+BIOMETRIC_INFORMATION:
+  - biometric
+  - fingerprint
+  - retina scan
+  - facial recognition
+  - template
