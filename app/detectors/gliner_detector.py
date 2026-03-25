@@ -156,56 +156,44 @@ class GLiNERDetector:
     def _deduplicate_overlap_detections(detections: List[Detection]) -> List[Detection]:
         """Remove duplicate detections from chunk overlap zones and cross-tier conflicts.
 
-        Phase 1 (same-label): When two chunks overlap, the same entity may be
-        detected twice with slightly different spans/scores. Keep the higher-scoring
-        detection when overlap >80% of the shorter span.
+        Uses a sweep-line approach: sort by start, then only compare against
+        recent detections whose spans could still overlap (end > current start).
+        This avoids O(n²) full scans for well-distributed detections.
 
-        Phase 2 (cross-label): Different tiers may detect the same span with
-        different labels. Keep the higher-scoring detection when overlap >90%.
+        Phase 1 (same-label): overlap >80% of shorter span → keep higher score.
+        Phase 2 (cross-label): overlap >90% of shorter span → keep higher score.
         """
         if not detections:
             return detections
 
         sorted_dets = sorted(detections, key=lambda d: (d.start, d.end))
-        kept: List[Detection] = []
+
+        def _sweep_dedup(dets: List[Detection], threshold: float, same_label_only: bool) -> List[Detection]:
+            kept: List[Detection] = []
+            for d in dets:
+                merged = False
+                # Walk backwards through kept — only check items whose end > d.start
+                for i in range(len(kept) - 1, -1, -1):
+                    k = kept[i]
+                    if k.end <= d.start:
+                        break  # No more possible overlaps (sorted by start)
+                    if same_label_only and d.label != k.label:
+                        continue
+                    overlap_len = max(0, min(d.end, k.end) - max(d.start, k.start))
+                    shorter_len = min(d.end - d.start, k.end - k.start)
+                    if shorter_len > 0 and overlap_len / shorter_len > threshold:
+                        if d.score > k.score:
+                            kept[i] = d
+                        merged = True
+                        break
+                if not merged:
+                    kept.append(d)
+            return kept
 
         # Phase 1: Same-label dedup (chunk overlap)
-        for d in sorted_dets:
-            merged = False
-            for i, k in enumerate(kept):
-                if d.label != k.label:
-                    continue
-                overlap_start = max(d.start, k.start)
-                overlap_end = min(d.end, k.end)
-                overlap_len = max(0, overlap_end - overlap_start)
-                shorter_len = min(d.end - d.start, k.end - k.start)
-
-                if shorter_len > 0 and overlap_len / shorter_len > 0.80:
-                    if d.score > k.score:
-                        kept[i] = d
-                    merged = True
-                    break
-            if not merged:
-                kept.append(d)
-
+        kept = _sweep_dedup(sorted_dets, threshold=0.80, same_label_only=True)
         # Phase 2: Cross-label dedup (cross-tier conflicts)
-        final: List[Detection] = []
-        for d in kept:
-            replaced = False
-            for i, f in enumerate(final):
-                overlap_start = max(d.start, f.start)
-                overlap_end = min(d.end, f.end)
-                overlap_len = max(0, overlap_end - overlap_start)
-                shorter_len = min(d.end - d.start, f.end - f.start)
-
-                if shorter_len > 0 and overlap_len / shorter_len > 0.90:
-                    if d.score > f.score:
-                        final[i] = d
-                    replaced = True
-                    break
-            if not replaced:
-                final.append(d)
-
+        final = _sweep_dedup(kept, threshold=0.90, same_label_only=False)
         return final
 
     def _sliding_window_chunker(self, text: str, window_size: int, overlap: int) -> List[Tuple[str, int]]:

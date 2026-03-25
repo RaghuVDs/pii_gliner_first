@@ -32,11 +32,10 @@ class PatternFieldDetector:
             for alias in aliases:
                 escaped = re.escape(alias).replace(r"\ ", r"\s+")
 
-                # ALL field patterns require an explicit separator (: = -)
+                # ALL field patterns require an explicit separator (: = - ; —)
                 # to avoid matching conversational text like "my name is John"
-                # or "my date of birth is 01/15/1980"
                 pattern = re.compile(
-                    rf"(?P<full>(?P<field>{escaped})\s*[:=\-]\s*(?P<value>[^\n;]+))",
+                    rf"(?P<full>(?P<field>{escaped})\s*[:=\-;\u2014]\s*(?P<value>[^\n;]+))",
                     re.IGNORECASE,
                 )
                 compiled[label].append(pattern)

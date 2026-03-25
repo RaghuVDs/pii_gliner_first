@@ -1,22 +1,12 @@
 from __future__ import annotations
 from functools import lru_cache
 import re
-import spacy
 from typing import List, Dict
 from collections import Counter
 
 from app.models import Detection
 from app.preprocessing import should_keep_detection
 
-# Lazy load the spaCy grammar engine so it doesn't slow down boot times
-nlp = None
-
-def get_nlp():
-    global nlp
-    if nlp is None:
-        # MASSIVE SPEEDUP: Disable NER and Parser if only doing POS Tagging
-        nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
-    return nlp
 
 def _context_window(text: str, start: int, end: int, pad: int = 100) -> str:
     s = max(0, start - pad)
@@ -25,27 +15,13 @@ def _context_window(text: str, start: int, end: int, pad: int = 100) -> str:
 
 @lru_cache(maxsize=2048)
 def check_grammar(val: str) -> tuple[bool, bool]:
-    doc = get_nlp()(val)
-    has_propn = any(token.pos_ == "PROPN" for token in doc)
-    has_num = any(token.pos_ == "NUM" or token.like_num for token in doc)
+    """Lightweight grammar gate: uppercase first letter = proper noun, digit token = number."""
+    tokens = val.split()
+    has_propn = any(t[0].isupper() for t in tokens if t)
+    has_num = any(t.isdigit() or t.replace(".", "", 1).isdigit() for t in tokens)
     return has_propn, has_num
 
-# Lazy-load a separate spaCy pipeline WITH NER for person cross-validation
-_nlp_ner = None
-
-def get_nlp_ner():
-    global _nlp_ner
-    if _nlp_ner is None:
-        _nlp_ner = spacy.load("en_core_web_sm", disable=["parser"])
-    return _nlp_ner
-
-@lru_cache(maxsize=2048)
-def spacy_recognizes_as_person(val: str) -> bool:
-    """Cross-validate PERSON detections using spaCy's own NER."""
-    doc = get_nlp_ner()(val)
-    return any(ent.label_ == "PERSON" for ent in doc.ents)
-
-# Common words that spaCy tags as PROPN but are NOT person names
+# Common words that may appear uppercase but are NOT person names
 GRAMMAR_GATE_BLOCKLIST = {
     "customer", "account", "member", "cardmember", "agent", "manager",
     "supervisor", "representative", "associate", "merchant", "admin",
@@ -63,7 +39,7 @@ GRAMMAR_GATE_BLOCKLIST = {
 
 def apply_universal_dynamic_filters(text: str, detections: List[Detection]) -> List[Detection]:
     kept: List[Detection] = []
-    
+
     val_counts = Counter([d.text.lower().strip() for d in detections if d.source == "gliner"])
 
     for d in detections:
@@ -90,17 +66,13 @@ def apply_universal_dynamic_filters(text: str, detections: List[Detection]) -> L
             continue
 
         # HIGH-CONFIDENCE GLiNER BYPASS: When GLiNER's raw score >= 0.65,
-        # the model is confident enough to trust without spaCy POS validation.
-        # This prevents the grammar gate from incorrectly rejecting valid
-        # GLiNER detections on diverse/unique transcripts.
+        # the model is confident enough to trust without grammar validation.
         high_confidence_gliner = (d.source == "gliner" and d.score >= 0.65)
 
         if not high_confidence_gliner:
             has_propn, has_num = check_grammar(val)
             is_acronym = val.isupper() and len(val) > 1
 
-            # For PERSON labels: spaCy POS tagging is unreliable for first names
-            # (e.g. "Emily" → not PROPN). Use is_valid_person_name() as a bypass.
             is_person_label = "PERSON" in d.label or d.label == "MOTHERS_MAIDEN_NAME"
             if is_person_label:
                 if not should_keep_detection(d.label, val, ""):
@@ -110,16 +82,13 @@ def apply_universal_dynamic_filters(text: str, detections: List[Detection]) -> L
         else:
             is_person_label = "PERSON" in d.label or d.label == "MOTHERS_MAIDEN_NAME"
 
-        # Block common words that spaCy tags as PROPN but aren't PII
-        # (applies to ALL GLiNER detections regardless of confidence)
+        # Block common words that appear uppercase but aren't PII
         if val.lower().strip() in GRAMMAR_GATE_BLOCKLIST:
             continue
 
-        # Cross-validate PERSON labels with spaCy NER
-        # GLiNER-first: trust GLiNER for person names down to its detection threshold.
-        # Only reject multi-word names when BOTH spaCy disagrees AND GLiNER is very uncertain.
+        # Reject very low-confidence GLiNER multi-word PERSON detections
         if is_person_label and d.source == "gliner" and " " in val:
-            if not spacy_recognizes_as_person(val) and d.score < 0.45:
+            if d.score < 0.45:
                 continue
 
         if not has_digit and val_counts[val.lower()] > 3:
@@ -141,11 +110,11 @@ def split_person_names(text: str, detections: List[Detection]) -> List[Detection
     Splits generic FULL_NAME detections into granular First, Middle, and Last name detections.
     """
     out: List[Detection] = []
-    
+
     TITLES = {
         "mr", "mr.", "mrs", "mrs.", "ms", "ms.", "dr", "dr.", "sir", "madam",
         "prof", "prof.", "officer", "detective", "sergeant", "sgt", "sgt.",
-        "lieutenant", "lt", "lt.", "esq", "esq.",
+        "lieutenant", "lt", "lt.", "esq", "esq.", "attorney", "judge",
         # Stop words that regex IGNORECASE may accidentally capture as name parts
         "the", "a", "an", "is", "are", "was", "were", "for", "and", "but",
         "or", "at", "by", "in", "on", "to", "of", "with", "from",
@@ -156,86 +125,88 @@ def split_person_names(text: str, detections: List[Detection]) -> List[Detection
             out.append(d)
             continue
 
-        raw = (d.text or "").strip().strip("\"'“”‘’")
-        parts = [p for p in re.split(r"\s+", raw) if p and p.lower() not in TITLES]
+        raw = (d.text or "").strip()
+        # Strip surrounding quotes (straight and smart)
+        raw = raw.strip("\"'\u201c\u201d\u2018\u2019")
+
+        # Build (word, offset_in_raw) pairs by walking raw with regex
+        # This avoids the raw.find() bug with duplicate substrings
+        word_spans = [(m.group(), m.start()) for m in re.finditer(r"\S+", raw)]
+        # Filter out titles/stop words, keeping their positions
+        parts = [(w, pos) for w, pos in word_spans if w.lower() not in TITLES]
 
         if not parts:
             continue
 
+        meta = dict(getattr(d, "meta", {}) or {})
+
         # 1. Single Word Remaining (After stripping titles)
         if len(parts) == 1:
-            first = parts[0]
-            rel_first = raw.find(first)
-            if rel_first >= 0:
-                out.append(
-                    Detection(
-                        label="PERSON_LAST_NAME", # Usually if it's "Mr. Doe", Doe is the last name!
-                        start=d.start + rel_first,
-                        end=d.start + rel_first + len(first),
-                        text=first,
-                        score=d.score,
-                        source="derived",
-                        meta={**getattr(d, "meta", {})},
-                    )
-                )
-            continue
-
-        # 2. First and Last Name (2 or more words)
-        first = parts[0]
-        last = parts[-1]
-
-        rel_first = raw.find(first)
-        rel_last = raw.rfind(last)
-
-        if rel_first >= 0:
-            out.append(
-                Detection(
-                    label="PERSON_FIRST_NAME",
-                    start=d.start + rel_first,
-                    end=d.start + rel_first + len(first),
-                    text=first,
-                    score=max(d.score - 0.02, 0.0),
-                    source="derived",
-                    meta={**getattr(d, "meta", {})},
-                )
-            )
-
-        if rel_last >= 0 and last != first:
+            word, rel = parts[0]
             out.append(
                 Detection(
                     label="PERSON_LAST_NAME",
-                    start=d.start + rel_last,
-                    end=d.start + rel_last + len(last),
-                    text=last,
+                    start=d.start + rel,
+                    end=d.start + rel + len(word),
+                    text=word,
+                    score=d.score,
+                    source="derived",
+                    meta=meta,
+                )
+            )
+            continue
+
+        # 2. First and Last Name (2 or more words)
+        first_word, first_rel = parts[0]
+        last_word, last_rel = parts[-1]
+
+        out.append(
+            Detection(
+                label="PERSON_FIRST_NAME",
+                start=d.start + first_rel,
+                end=d.start + first_rel + len(first_word),
+                text=first_word,
+                score=max(d.score - 0.02, 0.0),
+                source="derived",
+                meta=meta,
+            )
+        )
+
+        if last_rel != first_rel:
+            out.append(
+                Detection(
+                    label="PERSON_LAST_NAME",
+                    start=d.start + last_rel,
+                    end=d.start + last_rel + len(last_word),
+                    text=last_word,
                     score=max(d.score - 0.02, 0.0),
                     source="derived",
-                    meta={**getattr(d, "meta", {})},
+                    meta=meta,
                 )
             )
 
         # 3. Middle Name (3 or more words)
         if len(parts) > 2:
-            middle = " ".join(parts[1:-1])
-            rel_middle = raw.find(middle)
-            
-            if rel_middle >= 0:
-                out.append(
-                    Detection(
-                        label="PERSON_MIDDLE_NAME",
-                        start=d.start + rel_middle,
-                        end=d.start + rel_middle + len(middle),
-                        text=middle,
-                        score=max(d.score - 0.02, 0.0),
-                        source="derived",
-                        meta={**getattr(d, "meta", {})},
-                    )
+            mid_word, mid_rel = parts[1]
+            mid_last_word, mid_last_rel = parts[-2]
+            middle_text = raw[mid_rel:mid_last_rel + len(mid_last_word)]
+            out.append(
+                Detection(
+                    label="PERSON_MIDDLE_NAME",
+                    start=d.start + mid_rel,
+                    end=d.start + mid_rel + len(middle_text),
+                    text=middle_text,
+                    score=max(d.score - 0.02, 0.0),
+                    source="derived",
+                    meta=meta,
                 )
+            )
 
     return out
 
 
 
-# Common English words that coincide with short person names — require high confidence to propagate
+# Common English words that coincide with short person names -- require high confidence to propagate
 _AMBIGUOUS_NAME_WORDS = {
     "may", "art", "mark", "bill", "will", "grant", "grace", "hope", "faith",
     "joy", "summer", "autumn", "dawn", "eve", "holly", "iris", "ivy", "jade",
@@ -269,7 +240,7 @@ def propagate_person_names(text: str, detections: List[Detection]) -> List[Detec
 
     new_detections = list(detections)
 
-    # Build combined set of all known name strings → label
+    # Build combined set of all known name strings -> label
     # Minimum 3 chars to avoid matching common short words
     name_to_label: Dict[str, str] = {}
     for label, names in known_names.items():
@@ -288,9 +259,9 @@ def propagate_person_names(text: str, detections: List[Detection]) -> List[Detec
         for m in pattern.finditer(text):
             start, end = m.start(), m.end()
 
-            # Skip if this span is already covered by an existing detection
+            # Skip if this span overlaps any existing detection
             already_covered = any(
-                s <= start < e or s < end <= e
+                start < e and end > s
                 for s, e in covered_spans
             )
             if already_covered:
@@ -323,9 +294,9 @@ def add_instance_numbers(detections: List[Detection]) -> List[Detection]:
     # Sort chronological for natural numbering
     ordered_detections = sorted(detections, key=lambda x: x.start)
 
-    # Track: label → next available index
+    # Track: label -> next available index
     next_idx: Dict[str, int] = {}
-    # Track: (label, normalized_text) → assigned index
+    # Track: (label, normalized_text) -> assigned index
     seen: Dict[tuple, int] = {}
     # Count unique values per label to decide if _N suffix is needed
     unique_per_label: Dict[str, set] = {}

@@ -245,7 +245,7 @@ class ContextDetector:
                         text=d.text,
                         start=d.start,
                         end=d.end,
-                        score=max(d.score, 0.95),  # Boost score to win overlap resolutions
+                        score=min(d.score + 0.15, 0.95),  # Conservative boost, not dishonest inflation
                         source="context",
                         meta={"promoted_from": d.label, "neighborhood": neighborhood[:250]},
                     )

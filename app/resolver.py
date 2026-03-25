@@ -86,8 +86,8 @@ SOURCE_PRIORITY = {
     "field_label": 40,   # Supplement — explicit label:value patterns
     "context": 35,       # Keyword-confirmed promotions
     "regex": 30,         # Fallback — pattern matching
+    "derived": 25,       # Split from trusted sources (GLiNER/regex) — should rank near regex
     "propagated": 15,
-    "derived": 10,
 }
 
 # Labels where regex/field_label have mathematical/structural format validation
@@ -136,15 +136,24 @@ def _labels_compatible(label1: str, label2: str) -> bool:
     """Check if two labels are semantically compatible for cross-validation."""
     if label1 == label2:
         return True
-    person_labels = {"PERSON_FULL_NAME", "PERSON_FIRST_NAME", "PERSON_LAST_NAME", "PERSON_MIDDLE_NAME"}
-    if label1 in person_labels and label2 in person_labels:
-        return True
-    account_labels = {"CREDIT_CARD_NUMBER", "ACCOUNT_NUMBER_AMEX"}
-    if label1 in account_labels and label2 in account_labels:
-        return True
-    ssn_labels = {"SSN", "TAX_ID"}
-    if label1 in ssn_labels and label2 in ssn_labels:
-        return True
+    # Groups of labels that may legitimately cross-validate each other
+    _COMPAT_GROUPS = [
+        {"PERSON_FULL_NAME", "PERSON_FIRST_NAME", "PERSON_LAST_NAME", "PERSON_MIDDLE_NAME"},
+        {"CREDIT_CARD_NUMBER", "ACCOUNT_NUMBER_AMEX"},
+        {"SSN", "TAX_ID"},
+        {"MEDICAL_RECORD_NUMBER", "HEALTH_PLAN_BENEFICIARY_NUMBER"},
+        {"EMPLOYEE_ID", "PAYROLL_NUMBER"},
+    ]
+    for group in _COMPAT_GROUPS:
+        if label1 in group and label2 in group:
+            return True
+    # Explicitly incompatible: temporal labels must not cross-validate each other
+    _TEMPORAL_LABELS = {
+        "DATE_OF_BIRTH", "CARD_EXPIRATION_DATE", "RETIREMENT_DATE",
+        "SEPARATION_DATE", "TRANSACTION_DATE",
+    }
+    if label1 in _TEMPORAL_LABELS and label2 in _TEMPORAL_LABELS and label1 != label2:
+        return False
     return False
 
 

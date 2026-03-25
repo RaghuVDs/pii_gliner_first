@@ -207,7 +207,7 @@ def is_valid_person_name(value: str) -> bool:
     parts = [p for p in re.split(r"\s+", v) if p]
     if len(parts) < 1 or len(parts) > 5:
         return False
-    return bool(re.fullmatch(r"[A-Za-z][A-Za-z.\-']*(?:\s+[A-Za-z][A-Za-z.\-']*){0,4}", v))
+    return bool(re.fullmatch(r"[A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F.\-']*(?:\s+[A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F.\-']*){0,4}", v))
 
 # Minimum character lengths per entity type to reject noise
 MIN_LENGTH_RULES = {

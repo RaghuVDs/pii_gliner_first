@@ -1,6 +1,9 @@
 import re
+import logging
 from typing import Dict, List
 from app.models import Detection
+
+logger = logging.getLogger(__name__)
 
 class RegexDetector:
     # Labels where patterns rely on letter case (e.g., [A-Z] for proper nouns).
@@ -24,8 +27,8 @@ class RegexDetector:
                         compiled[label].append(re.compile(pattern))
                     else:
                         compiled[label].append(re.compile(pattern, re.IGNORECASE))
-                except re.error:
-                    pass
+                except re.error as e:
+                    logger.warning("Invalid regex pattern for %s: %s — %s", label, pattern, e)
         return compiled
 
     def detect(self, text: str) -> List[Detection]:

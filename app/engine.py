@@ -13,6 +13,7 @@ from app.postprocessing import add_instance_numbers, remove_false_positives, spl
 from app.policy_engine import MaskingPolicyEngine
 from app.adaptive_learning import (
     UnknownPIIAccumulator,
+    DetectionStatsTracker,
     promote_pending_rules,
     manual_promote,
     review_pending_rules,
@@ -50,8 +51,9 @@ class HybridPIIEngine:
         self.context_detector = ContextDetector(context_rules=self.context_rules)
         self.masker = MaskingPolicyEngine(self.masking_rules)
 
-        # Strategy 3: Adaptive Learning — accumulates unknown PII for self-learning
+        # Strategy 3: Adaptive Learning — accumulates unknown PII for self-learning (PII-safe)
         self.accumulator = UnknownPIIAccumulator()
+        self.stats_tracker = DetectionStatsTracker()
 
     def detect(self, text: str) -> List[Detection]:
         detections: List[Detection] = []
@@ -74,10 +76,10 @@ class HybridPIIEngine:
         #    Also uses Strategy 1 (similarity classifier) for unknown PII
         detections = self.context_detector.detect(text, detections)
 
-        # 4b. Adaptive Learning: record unclassified detections for self-learning
+        # 4b. Adaptive Learning: record unclassified detections (PII-safe)
         unknown_candidates = self.context_detector.get_unknown_candidates()
         if unknown_candidates:
-            self.accumulator.record(unknown_candidates)
+            self.accumulator.record(unknown_candidates, detections, text)
             self.accumulator.flush()
 
         # 5. Drop bad guesses (source-aware filtering)
@@ -98,6 +100,9 @@ class HybridPIIEngine:
 
         # 9. Add strict <LABEL_N> numbering
         detections = add_instance_numbers(detections)
+
+        # 10. Record aggregate stats (PII-safe: labels, scores, sources only)
+        self.stats_tracker.record_run(detections)
 
         return detections
 
@@ -167,3 +172,11 @@ class HybridPIIEngine:
             Dict with total_groups, ready_to_promote, total_sightings.
         """
         return self.accumulator.get_stats()
+
+    def detection_stats(self) -> Dict[str, Any]:
+        """Get aggregate detection statistics across all runs.
+
+        Returns:
+            Dict with label_counts, source_counts, label_source_counts, total_runs.
+        """
+        return self.stats_tracker.get_stats()

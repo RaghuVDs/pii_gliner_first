@@ -1,12 +1,22 @@
 """
-Adaptive PII Learning — Strategy 3: Self-Learning Context Rules
+Adaptive PII Learning — PII-Safe Self-Learning Context Rules
+
+COMPLIANCE: This module NEVER stores actual PII values on disk.
+Instead it stores:
+  - Structure patterns (e.g., "NNN-NN-NNNN" instead of "621-73-4489")
+  - PII label names, confidence scores, detection sources
+  - Neighborhood text with all PII spans masked as <LABEL> tags
+  - Context keywords extracted from sanitized neighborhoods
+  - Co-occurring label statistics
 
 This module provides:
-1. UnknownPIIAccumulator: Records unclassified PII detections with their context,
+1. UnknownPIIAccumulator: Records unclassified PII detections with sanitized context,
    extracts keyword patterns, and accumulates them in pending_rules.yaml.
 2. promote_pending_rules(): Moves high-confidence pending rules (seen N+ times)
    into context_rules.yaml so the engine picks them up automatically.
 3. review_pending_rules(): Returns the current state of pending rules for human review.
+4. DetectionStatsTracker: Tracks label frequencies, score distributions, and
+   co-occurring labels across runs for pipeline health monitoring.
 """
 from __future__ import annotations
 
@@ -19,10 +29,13 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from app.models import Detection
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
 PENDING_PATH = os.path.join(CONFIG_DIR, "pending_rules.yaml")
 CONTEXT_RULES_PATH = os.path.join(CONFIG_DIR, "context_rules.yaml")
+STATS_PATH = os.path.join(CONFIG_DIR, "detection_stats.yaml")
 
 # Words too common to be useful as context keywords
 _STOPWORDS = {
@@ -43,6 +56,101 @@ _STOPWORDS = {
     "agent", "customer", "sure", "please", "thank", "thanks", "hi", "hello",
     "let", "get", "got", "go", "going", "know", "see", "look", "make",
 }
+
+
+# ── PII-Safe Utilities ─────────────────────────────────────────────────
+
+
+def _value_to_structure(value: str) -> str:
+    """Convert a PII value to a structure pattern — NEVER stores the actual value.
+
+    Mapping:
+        digit     → N
+        uppercase → A
+        lowercase → a
+        everything else (punctuation, whitespace) → kept as-is
+
+    Examples:
+        "621-73-4489"     → "NNN-NN-NNNN"
+        "John Doe"        → "Aaaa Aaa"
+        "john.doe@x.com"  → "aaaa.aaa@a.aaa"
+        "4111-1111-1111"  → "NNNN-NNNN-NNNN"
+    """
+    out = []
+    for ch in value:
+        if ch.isdigit():
+            out.append("N")
+        elif ch.isupper():
+            out.append("A")
+        elif ch.islower():
+            out.append("a")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _mask_pii_in_text(text: str, detections: List[Detection]) -> str:
+    """Replace all detected PII spans in text with <LABEL> placeholders.
+
+    Detections must have valid start/end offsets into `text`.
+    Overlapping spans are handled by processing from right to left
+    (highest offset first) so earlier offsets stay valid.
+
+    Returns the sanitized text with PII replaced by tags like <SSN>, <PERSON_FIRST_NAME>.
+    """
+    if not detections:
+        return text
+
+    # Sort by start descending so replacements don't shift earlier offsets
+    sorted_dets = sorted(detections, key=lambda d: d.start, reverse=True)
+
+    masked = text
+    for d in sorted_dets:
+        if 0 <= d.start < d.end <= len(masked):
+            masked = masked[:d.start] + f"<{d.label}>" + masked[d.end:]
+    return masked
+
+
+def _extract_safe_neighborhood(
+    text: str,
+    start: int,
+    end: int,
+    all_detections: List[Detection],
+    pad: int = 150,
+) -> str:
+    """Extract neighborhood text around a span with all PII masked out.
+
+    1. Takes a window of `pad` chars around [start, end]
+    2. Finds all detections that overlap this window
+    3. Replaces their spans with <LABEL> tags
+    4. Returns the sanitized neighborhood string
+    """
+    win_start = max(0, start - pad)
+    win_end = min(len(text), end + pad)
+    window_text = text[win_start:win_end]
+
+    # Find detections that overlap the window
+    window_dets = []
+    for d in all_detections:
+        if d.start < win_end and d.end > win_start:
+            # Adjust offsets to be relative to window
+            adj_start = max(0, d.start - win_start)
+            adj_end = min(len(window_text), d.end - win_start)
+            if adj_start < adj_end:
+                window_dets.append(Detection(
+                    label=d.label,
+                    text=d.text,
+                    start=adj_start,
+                    end=adj_end,
+                    score=d.score,
+                    source=d.source,
+                    meta=d.meta,
+                ))
+
+    return _mask_pii_in_text(window_text, window_dets)
+
+
+# ── YAML Helpers ────────────────────────────────────────────────────────
 
 
 def _load_yaml(path: str) -> Dict:
@@ -106,15 +214,19 @@ def _extract_keywords(neighborhood: str, value: str, top_n: int = 8) -> List[str
     return [word for word, _ in counts.most_common(top_n)]
 
 
+# ── Unknown PII Accumulator (PII-Safe) ─────────────────────────────────
+
+
 class UnknownPIIAccumulator:
-    """Accumulates unclassified PII detections and their context patterns.
+    """Accumulates unclassified PII detections with PII-SAFE context.
 
     Thread-safe. Writes to pending_rules.yaml on each flush.
+    NEVER stores actual PII values — only structure patterns and masked neighborhoods.
 
     Usage:
         accumulator = UnknownPIIAccumulator()
-        accumulator.record(candidates)  # List of unknown candidate dicts
-        accumulator.flush()             # Write to disk
+        accumulator.record(candidates, all_detections)
+        accumulator.flush()
     """
 
     def __init__(self, pending_path: str = PENDING_PATH):
@@ -122,26 +234,64 @@ class UnknownPIIAccumulator:
         self._lock = threading.Lock()
         self._buffer: List[Dict] = []
 
-    def record(self, candidates: List[Dict]) -> None:
-        """Buffer unknown PII candidates for later flush to disk.
+    def record(
+        self,
+        candidates: List[Dict],
+        all_detections: List[Detection],
+        full_text: str,
+    ) -> None:
+        """Buffer unknown PII candidates with PII-safe sanitization.
 
         Each candidate dict should have:
-            - value: str (the detected text)
+            - value: str (the detected text — used for structure extraction, NOT stored)
             - original_label: str (e.g., UNKNOWN_PII)
-            - neighborhood: str (surrounding text context)
+            - neighborhood: str (surrounding text — will be sanitized)
             - start: int
             - end: int
             - score: float
             - source: str
+
+        Args:
+            candidates: Unknown PII candidate dicts from context detector.
+            all_detections: ALL detections from the pipeline (used to mask PII in neighborhoods).
+            full_text: The full input text (used for accurate neighborhood extraction).
         """
+        sanitized = []
+        for c in candidates:
+            value = c.get("value", "").strip()
+            start = c.get("start", 0)
+            end = c.get("end", 0)
+
+            if not value:
+                continue
+
+            # Extract PII-safe neighborhood (all PII spans masked with <LABEL> tags)
+            safe_neighborhood = _extract_safe_neighborhood(
+                full_text, start, end, all_detections, pad=150
+            )
+
+            sanitized.append({
+                "structure_pattern": _value_to_structure(value),
+                "value_length": len(value),
+                "original_label": c.get("original_label", "UNKNOWN_PII"),
+                "safe_neighborhood": safe_neighborhood,
+                "score": c.get("score", 0.0),
+                "source": c.get("source", "unknown"),
+                "co_occurring_labels": sorted(set(
+                    d.label for d in all_detections
+                    if abs(d.start - start) < 500 and d.label != c.get("original_label")
+                )),
+            })
+
         with self._lock:
-            self._buffer.extend(candidates)
+            self._buffer.extend(sanitized)
 
     def flush(self) -> int:
-        """Write buffered candidates to pending_rules.yaml.
+        """Write buffered candidates to pending_rules.yaml (PII-safe).
 
         Groups candidates by extracted keyword signature, updates seen_count,
-        and stores example contexts for human review.
+        and stores sanitized context for human review.
+        NEVER writes actual PII values to disk.
 
         Returns the number of new candidate groups written.
         """
@@ -156,35 +306,34 @@ class UnknownPIIAccumulator:
         new_groups = 0
 
         for candidate in to_process:
-            value = candidate.get("value", "").strip()
-            neighborhood = candidate.get("neighborhood", "")
+            safe_neighborhood = candidate.get("safe_neighborhood", "")
+            structure = candidate.get("structure_pattern", "")
             original_label = candidate.get("original_label", "UNKNOWN_PII")
 
-            if not value or not neighborhood:
+            if not safe_neighborhood:
                 continue
 
-            # Extract informative keywords from neighborhood
-            keywords = _extract_keywords(neighborhood, value)
+            # Extract keywords from the SANITIZED neighborhood (no PII leakage)
+            keywords = _extract_keywords(safe_neighborhood, structure)
             if not keywords:
                 continue
 
             # Create a stable group key from sorted top keywords
-            # This groups similar contexts together
             group_key = "_".join(sorted(keywords[:4])).upper()
             if not group_key:
                 continue
 
             # Generate a suggested label from the keywords
-            suggested_label = _suggest_label(keywords, neighborhood)
+            suggested_label = _suggest_label(keywords, safe_neighborhood)
 
             if group_key in pending:
                 entry = pending[group_key]
                 entry["seen_count"] = entry.get("seen_count", 0) + 1
                 entry["last_seen"] = datetime.now().isoformat()
 
-                # Add example context (keep max 5)
+                # Add PII-safe example (structure pattern + sanitized neighborhood)
                 examples = entry.get("example_contexts", [])
-                example_snippet = f"{value} | ...{neighborhood[:120]}..."
+                example_snippet = f"[{structure}] | ...{safe_neighborhood[:150]}..."
                 if example_snippet not in examples:
                     examples.append(example_snippet)
                     entry["example_contexts"] = examples[-5:]
@@ -193,6 +342,17 @@ class UnknownPIIAccumulator:
                 existing_kw = set(entry.get("suggested_keywords", []))
                 existing_kw.update(keywords)
                 entry["suggested_keywords"] = sorted(existing_kw)[:12]
+
+                # Track structure patterns seen
+                structures = entry.get("structure_patterns", [])
+                if structure and structure not in structures:
+                    structures.append(structure)
+                    entry["structure_patterns"] = structures[-10:]
+
+                # Track co-occurring labels
+                co_labels = set(entry.get("co_occurring_labels", []))
+                co_labels.update(candidate.get("co_occurring_labels", []))
+                entry["co_occurring_labels"] = sorted(co_labels)[:15]
 
                 # Update suggested label if we now have a better one
                 if suggested_label and not entry.get("suggested_label"):
@@ -204,8 +364,11 @@ class UnknownPIIAccumulator:
                     "first_seen": datetime.now().isoformat(),
                     "last_seen": datetime.now().isoformat(),
                     "original_labels": [original_label],
-                    "example_contexts": [f"{value} | ...{neighborhood[:120]}..."],
+                    "example_contexts": [f"[{structure}] | ...{safe_neighborhood[:150]}..."],
                     "suggested_keywords": keywords,
+                    "structure_patterns": [structure] if structure else [],
+                    "co_occurring_labels": candidate.get("co_occurring_labels", []),
+                    "avg_score": candidate.get("score", 0.0),
                     "promoted": False,
                 }
                 new_groups += 1
@@ -231,6 +394,58 @@ class UnknownPIIAccumulator:
             "ready_to_promote": ready,
             "total_sightings": total_sightings,
         }
+
+
+# ── Detection Stats Tracker (PII-Safe) ─────────────────────────────────
+
+
+class DetectionStatsTracker:
+    """Tracks aggregate detection statistics across runs — NO PII stored.
+
+    Stores only: label frequencies, score distributions, source effectiveness,
+    co-occurring label pairs, and structure pattern frequencies.
+    """
+
+    def __init__(self, stats_path: str = STATS_PATH):
+        self.stats_path = stats_path
+        self._lock = threading.Lock()
+
+    def record_run(self, detections: List[Detection]) -> None:
+        """Record aggregate stats from a single detection run."""
+        if not detections:
+            return
+
+        with self._lock:
+            stats = _load_yaml(self.stats_path)
+
+            # Initialize sections
+            stats.setdefault("total_runs", 0)
+            stats["total_runs"] += 1
+            stats.setdefault("label_counts", {})
+            stats.setdefault("source_counts", {})
+            stats.setdefault("label_source_counts", {})
+            stats.setdefault("last_updated", "")
+            stats["last_updated"] = datetime.now().isoformat()
+
+            # Count labels and sources
+            for d in detections:
+                stats["label_counts"][d.label] = stats["label_counts"].get(d.label, 0) + 1
+                stats["source_counts"][d.source] = stats["source_counts"].get(d.source, 0) + 1
+
+                # Label+source combo (e.g., "SSN|regex": 42)
+                combo_key = f"{d.label}|{d.source}"
+                stats["label_source_counts"][combo_key] = (
+                    stats["label_source_counts"].get(combo_key, 0) + 1
+                )
+
+            _save_yaml(self.stats_path, stats)
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Return current aggregate stats."""
+        return _load_yaml(self.stats_path)
+
+
+# ── Label Suggestion Heuristic ──────────────────────────────────────────
 
 
 def _suggest_label(keywords: List[str], neighborhood: str) -> str:
@@ -286,13 +501,16 @@ def _suggest_label(keywords: List[str], neighborhood: str) -> str:
     return "UNKNOWN_PII"
 
 
+# ── Promotion Pipeline ──────────────────────────────────────────────────
+
+
 def promote_pending_rules(
     threshold: int = 3,
     pending_path: str = PENDING_PATH,
     context_rules_path: str = CONTEXT_RULES_PATH,
     auto_confirm: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Strategy 3, Step C: Promote high-confidence pending rules to context_rules.yaml.
+    """Promote high-confidence pending rules to context_rules.yaml.
 
     Scans pending_rules.yaml for entries with seen_count >= threshold that
     haven't been promoted yet. Adds their keywords to context_rules.yaml
@@ -331,6 +549,8 @@ def promote_pending_rules(
             "keywords": keywords,
             "seen_count": entry.get("seen_count", 0),
             "example_contexts": entry.get("example_contexts", []),
+            "structure_patterns": entry.get("structure_patterns", []),
+            "co_occurring_labels": entry.get("co_occurring_labels", []),
         })
 
     if not auto_confirm:
@@ -373,15 +593,10 @@ def manual_promote(
 ) -> bool:
     """Manually promote a specific pending rule with a user-specified label.
 
-    Use this when the auto-suggested label isn't right — the human reviewer
-    provides the correct PII label name.
-
     Args:
         group_key: The group key in pending_rules.yaml to promote.
         label: The correct PII label to assign.
         keywords: Optional override keywords. If None, uses suggested_keywords.
-        pending_path: Path to pending_rules.yaml.
-        context_rules_path: Path to context_rules.yaml.
 
     Returns:
         True if promoted, False if group_key not found.
@@ -428,6 +643,8 @@ def review_pending_rules(pending_path: str = PENDING_PATH) -> List[Dict[str, Any
             "promoted": entry.get("promoted", False),
             "suggested_keywords": entry.get("suggested_keywords", []),
             "example_contexts": entry.get("example_contexts", []),
+            "structure_patterns": entry.get("structure_patterns", []),
+            "co_occurring_labels": entry.get("co_occurring_labels", []),
             "first_seen": entry.get("first_seen"),
             "last_seen": entry.get("last_seen"),
         })
