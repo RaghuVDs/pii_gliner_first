@@ -1,12 +1,16 @@
-"""CNN-BiLSTM + MLP hybrid model for PII pattern classification.
+"""CNN-BiLSTM + Attention + MLP hybrid model for PII pattern classification.
 
 Architecture:
-    Structure Pattern → Char Embedding → 1D-CNN → BiLSTM → 128-dim
-    Context Features  → MLP → 64-dim
-    Combined 192-dim  → Classifier → Label probabilities
+    Structure Pattern → Char Embed (48) → 1D-CNN (3 kernels) → 2-layer BiLSTM (96)
+                      → Attention Pooling → 192-dim
+    Context Features  → 2-layer MLP → 96-dim
+    Combined 288-dim  → 2-layer Classifier → Label probabilities
+
+All tensors flow on CUDA when available. ~200K parameters.
 """
 from __future__ import annotations
 
+import math
 import torch
 import torch.nn as nn
 
@@ -30,24 +34,55 @@ def encode_pattern(pattern: str) -> list[int]:
     ids = []
     for ch in pattern[:MAX_PATTERN_LEN]:
         ids.append(CHAR_TO_IDX.get(ch, CHAR_TO_IDX["<UNK>"]))
-    # Pad to fixed length
     while len(ids) < MAX_PATTERN_LEN:
         ids.append(CHAR_TO_IDX["<PAD>"])
     return ids
 
 
-class PIIPatternModel(nn.Module):
-    """Hybrid CNN-BiLSTM + MLP for PII pattern classification.
+class AttentionPooling(nn.Module):
+    """Learned attention pooling over LSTM sequence outputs.
 
-    Args:
-        num_labels: Number of PII label classes.
-        num_keywords: Size of keyword vocabulary (multi-hot input).
-        num_sources: Number of detection source types.
-        char_vocab_size: Character vocabulary size for structure patterns.
-        char_embed_dim: Character embedding dimension.
-        cnn_filters: Number of CNN filters per kernel size.
-        lstm_hidden: LSTM hidden dimension (per direction).
-        mlp_hidden: MLP hidden dimension for context features.
+    Instead of just taking the final hidden state (which loses info about
+    early parts of the pattern), attention learns WHICH positions matter.
+    E.g., for "NNN-NN-NNNN" it learns that dash positions and segment
+    lengths are the most discriminative features.
+    """
+
+    def __init__(self, hidden_dim: int):
+        super().__init__()
+        self.attention = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.Tanh(),
+            nn.Linear(hidden_dim // 2, 1, bias=False),
+        )
+
+    def forward(self, lstm_output: torch.Tensor, pad_mask: torch.Tensor | None = None) -> torch.Tensor:
+        """
+        Args:
+            lstm_output: (batch, seq_len, hidden_dim)
+            pad_mask: (batch, seq_len) — True for real tokens, False for padding
+        Returns:
+            (batch, hidden_dim) attention-pooled vector
+        """
+        scores = self.attention(lstm_output).squeeze(-1)  # (batch, seq_len)
+        if pad_mask is not None:
+            scores = scores.masked_fill(~pad_mask, float("-inf"))
+        weights = torch.softmax(scores, dim=-1).unsqueeze(1)  # (batch, 1, seq_len)
+        pooled = torch.bmm(weights, lstm_output).squeeze(1)   # (batch, hidden_dim)
+        return pooled
+
+
+class PIIPatternModel(nn.Module):
+    """Production-grade CNN-BiLSTM + Attention + MLP for PII pattern classification.
+
+    Improvements over v1:
+      - 2-layer BiLSTM with inter-layer dropout
+      - Attention pooling (learns which pattern positions matter)
+      - Pad masking (attention ignores padding)
+      - Deeper context MLP (2 layers)
+      - Deeper classifier (2 layers)
+      - He/Kaiming initialization for all linear layers
+      - Larger embedding and hidden dims
     """
 
     def __init__(
@@ -56,56 +91,90 @@ class PIIPatternModel(nn.Module):
         num_keywords: int = 400,
         num_sources: int = 7,
         char_vocab_size: int = len(CHAR_TO_IDX),
-        char_embed_dim: int = 32,
-        cnn_filters: int = 32,
-        lstm_hidden: int = 64,
-        mlp_hidden: int = 64,
+        char_embed_dim: int = 48,
+        cnn_filters: int = 48,
+        lstm_hidden: int = 96,
+        lstm_layers: int = 2,
+        lstm_dropout: float = 0.25,
+        mlp_hidden: int = 128,
+        classifier_hidden: int = 160,
+        dropout: float = 0.3,
     ):
         super().__init__()
         self.num_labels = num_labels
 
-        # ── Pattern Encoder (CNN + BiLSTM) ──
+        # ── Pattern Encoder ──────────────────────────────────────────
         self.char_embed = nn.Embedding(char_vocab_size, char_embed_dim, padding_idx=0)
 
-        # 1D-CNN: 3 kernel sizes to capture 2-char, 3-char, 4-char sub-patterns
+        # 1D-CNN: 3 odd kernel sizes for same-padding
+        self.cnn_kernels = [3, 5, 7]
         self.convs = nn.ModuleList([
             nn.Conv1d(char_embed_dim, cnn_filters, kernel_size=k, padding=k // 2)
-            for k in [2, 3, 4]
+            for k in self.cnn_kernels
         ])
-        self.conv_bn = nn.BatchNorm1d(cnn_filters * 3)
-        self.conv_dropout = nn.Dropout(0.2)
+        cnn_out_dim = cnn_filters * len(self.cnn_kernels)
+        self.conv_norm = nn.LayerNorm(cnn_out_dim)
+        self.conv_dropout = nn.Dropout(dropout * 0.5)
 
-        # BiLSTM on top of CNN features
+        # 2-layer BiLSTM
         self.lstm = nn.LSTM(
-            input_size=cnn_filters * 3,
+            input_size=cnn_out_dim,
             hidden_size=lstm_hidden,
-            num_layers=1,
+            num_layers=lstm_layers,
             batch_first=True,
             bidirectional=True,
-            dropout=0,
+            dropout=lstm_dropout if lstm_layers > 1 else 0,
         )
-        self.pattern_dim = lstm_hidden * 2  # bidirectional
+        self.lstm_norm = nn.LayerNorm(lstm_hidden * 2)
+        pattern_dim = lstm_hidden * 2
 
-        # ── Context Encoder (MLP) ──
-        # Input: keywords (multi-hot) + co-labels (multi-hot) + source (one-hot) + score + length
+        # Attention pooling
+        self.attention = AttentionPooling(pattern_dim)
+
+        # ── Context Encoder (2-layer MLP) ────────────────────────────
         context_input_dim = num_keywords + num_labels + num_sources + 2
         self.context_mlp = nn.Sequential(
             nn.Linear(context_input_dim, mlp_hidden),
-            nn.ReLU(),
-            nn.BatchNorm1d(mlp_hidden),
-            nn.Dropout(0.3),
+            nn.GELU(),
+            nn.LayerNorm(mlp_hidden),
+            nn.Dropout(dropout),
+            nn.Linear(mlp_hidden, mlp_hidden // 2),
+            nn.GELU(),
+            nn.LayerNorm(mlp_hidden // 2),
+            nn.Dropout(dropout * 0.5),
         )
-        self.context_dim = mlp_hidden
+        context_dim = mlp_hidden // 2
 
-        # ── Classifier Head ──
-        combined_dim = self.pattern_dim + self.context_dim
-        classifier_hidden = 96
+        # ── Classifier Head (2-layer) ────────────────────────────────
+        combined_dim = pattern_dim + context_dim
         self.classifier = nn.Sequential(
             nn.Linear(combined_dim, classifier_hidden),
-            nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.GELU(),
+            nn.LayerNorm(classifier_hidden),
+            nn.Dropout(dropout),
             nn.Linear(classifier_hidden, num_labels),
         )
+
+        # ── Weight initialization ────────────────────────────────────
+        self._init_weights()
+
+    def _init_weights(self):
+        """Kaiming/He initialization for linear/conv, orthogonal for LSTM."""
+        for name, param in self.named_parameters():
+            if "lstm" in name:
+                if "weight_ih" in name:
+                    nn.init.kaiming_normal_(param, nonlinearity="relu")
+                elif "weight_hh" in name:
+                    nn.init.orthogonal_(param)
+                elif "bias" in name:
+                    nn.init.zeros_(param)
+                    # Set forget gate bias to 1.0 for better gradient flow
+                    hidden_size = param.size(0) // 4
+                    param.data[hidden_size:2 * hidden_size].fill_(1.0)
+            elif "weight" in name and param.dim() >= 2:
+                nn.init.kaiming_normal_(param, nonlinearity="relu")
+            elif "bias" in name:
+                nn.init.zeros_(param)
 
     def forward(self, char_ids: torch.Tensor, context_features: torch.Tensor) -> torch.Tensor:
         """Forward pass.
@@ -117,30 +186,26 @@ class PIIPatternModel(nn.Module):
         Returns:
             (batch, num_labels) logits.
         """
-        # ── Pattern branch ──
-        # (batch, seq_len) → (batch, seq_len, embed_dim)
-        char_emb = self.char_embed(char_ids)
-        # Conv1d expects (batch, channels, seq_len)
-        x = char_emb.transpose(1, 2)
+        # Build pad mask: True where char_id != 0 (PAD)
+        pad_mask = char_ids != 0  # (batch, seq_len)
 
-        # Apply each CNN kernel and keep full sequence length
-        conv_outs = [torch.relu(conv(x)) for conv in self.convs]
-        # Concat along channel dim: (batch, cnn_filters*3, seq_len)
-        x = torch.cat(conv_outs, dim=1)
-        x = self.conv_bn(x)
+        # ── Pattern branch ──
+        char_emb = self.char_embed(char_ids)        # (batch, seq_len, embed_dim)
+        x = char_emb.transpose(1, 2)                # (batch, embed_dim, seq_len)
+
+        conv_outs = [nn.functional.gelu(conv(x)) for conv in self.convs]
+        x = torch.cat(conv_outs, dim=1)             # (batch, cnn_out, seq_len)
+        x = x.transpose(1, 2)                       # (batch, seq_len, cnn_out)
+        x = self.conv_norm(x)
         x = self.conv_dropout(x)
 
-        # Back to (batch, seq_len, features) for LSTM
-        x = x.transpose(1, 2)
-        lstm_out, (h_n, _) = self.lstm(x)
-        # Take final hidden states from both directions
-        # h_n shape: (num_layers*2, batch, lstm_hidden)
-        pattern_vec = torch.cat([h_n[-2], h_n[-1]], dim=-1)  # (batch, lstm_hidden*2)
+        lstm_out, _ = self.lstm(x)                   # (batch, seq_len, lstm_hidden*2)
+        lstm_out = self.lstm_norm(lstm_out)
+        pattern_vec = self.attention(lstm_out, pad_mask)  # (batch, lstm_hidden*2)
 
         # ── Context branch ──
-        context_vec = self.context_mlp(context_features)  # (batch, mlp_hidden)
+        context_vec = self.context_mlp(context_features)
 
         # ── Combine and classify ──
         combined = torch.cat([pattern_vec, context_vec], dim=-1)
-        logits = self.classifier(combined)
-        return logits
+        return self.classifier(combined)

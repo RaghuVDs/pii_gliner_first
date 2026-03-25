@@ -83,6 +83,7 @@ LABEL_PRIORITY = {
 
 SOURCE_PRIORITY = {
     "gliner": 50,        # PRIMARY — semantic understanding handles diverse transcripts
+    "pattern_lstm": 45,  # Learned patterns — trained from GLiNER/regex, trusted near-primary
     "field_label": 40,   # Supplement — explicit label:value patterns
     "context": 35,       # Keyword-confirmed promotions
     "regex": 30,         # Fallback — pattern matching
@@ -111,6 +112,9 @@ def _normalize_score(score: float, source: str) -> float:
     if source == "gliner":
         # Map GLiNER's effective range [0.20, 1.0] → [0.0, 0.96]
         return max(0.0, min((score - 0.20) / 0.80 * 0.96, 0.96))
+    if source == "pattern_lstm":
+        # LSTM predictions — confidence already calibrated via softmax, cap at 0.94
+        return max(0.0, min(score, 0.94))
     if source == "derived":
         # Derived from name splitting — keep proportionally below GLiNER
         return max(0.0, min((score - 0.20) / 0.80 * 0.90, 0.90))

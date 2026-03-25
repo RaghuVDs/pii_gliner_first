@@ -47,7 +47,7 @@ def apply_universal_dynamic_filters(text: str, detections: List[Detection]) -> L
         if not val:
             continue
 
-        if d.source in ("regex", "field_label", "context"):
+        if d.source in ("regex", "field_label", "context", "pattern_lstm"):
             neighborhood = _context_window(text, d.start, d.end, pad=100)
             if should_keep_detection(d.label, val, neighborhood, source=d.source):
                 kept.append(d)

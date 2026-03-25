@@ -1,7 +1,10 @@
 from __future__ import annotations
 import os
+import logging
 from typing import List, Dict, Any
 import yaml
+
+logger = logging.getLogger("pii_engine")
 
 from app.models import RedactionResult, Detection
 from app.detectors.regex_detector import RegexDetector
@@ -18,6 +21,7 @@ from app.adaptive_learning import (
     manual_promote,
     review_pending_rules,
 )
+from app.ml.trainer import SelfTrainer
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,6 +59,17 @@ class HybridPIIEngine:
         self.accumulator = UnknownPIIAccumulator()
         self.stats_tracker = DetectionStatsTracker()
 
+        # Pattern LSTM classifier — learns from GLiNER detections, upgrades unknowns
+        self.self_trainer = SelfTrainer()
+
+        # Auto-promotion counter — promotes pending rules every N runs without human review
+        self._run_count = 0
+        self._auto_promote_interval = 50  # Check for auto-promotion every 50 detect() calls
+
+        if self.self_trainer.is_ready():
+            labels = list(self.self_trainer.label_to_idx.keys())
+            logger.info(f"[LSTM] Model loaded on startup — {len(labels)} labels known: {labels}")
+
     def detect(self, text: str) -> List[Detection]:
         detections: List[Detection] = []
 
@@ -82,6 +97,17 @@ class HybridPIIEngine:
             self.accumulator.record(unknown_candidates, detections, text)
             self.accumulator.flush()
 
+        # 4c. Pattern LSTM: upgrade UNKNOWN_PII / low-confidence using learned patterns
+        if self.self_trainer.is_ready():
+            before_count = sum(1 for d in detections if d.source == "pattern_lstm")
+            detections = self.self_trainer.pseudo_label(detections, text)
+            after_count = sum(1 for d in detections if d.source == "pattern_lstm")
+            upgrades = after_count - before_count
+            if upgrades > 0:
+                upgraded = [d for d in detections if d.source == "pattern_lstm"]
+                labels = [f"{d.label}({d.score:.2f})" for d in upgraded[-upgrades:]]
+                logger.info(f"[LSTM] Upgraded {upgrades} detections: {labels}")
+
         # 5. Drop bad guesses (source-aware filtering)
         detections = remove_false_positives(text, detections)
 
@@ -103,6 +129,31 @@ class HybridPIIEngine:
 
         # 10. Record aggregate stats (PII-safe: labels, scores, sources only)
         self.stats_tracker.record_run(detections)
+
+        # 11. Collect training data from high-confidence detections (PII-safe)
+        n_collected = self.self_trainer.collect_from_detections(detections, text)
+        self.self_trainer.flush_to_disk()
+
+        # 12. Auto-retrain if enough new data accumulated
+        if self.self_trainer.should_retrain():
+            logger.info("[LSTM] Auto-retrain triggered — training on accumulated data...")
+            result = self.self_trainer.retrain()
+            if result.get("status") == "trained":
+                labels = list(self.self_trainer.label_to_idx.keys())
+                logger.info(
+                    f"[LSTM] Training complete — {result['num_examples']} examples, "
+                    f"{result['num_labels']} labels, val_f1={result.get('val_weighted_f1', 0):.3f}, "
+                    f"best_epoch={result.get('best_epoch')}/{result.get('stopped_epoch')}"
+                )
+                logger.info(f"[LSTM] Known labels: {labels}")
+
+        # 13. Auto-promote pending rules (no human reviewer needed)
+        self._run_count += 1
+        if self._run_count % self._auto_promote_interval == 0:
+            promoted = self.promote_rules(threshold=3, auto=True)
+            if promoted:
+                promoted_labels = [r.get("label", "?") for r in promoted]
+                logger.info(f"[AUTO-PROMOTE] Promoted {len(promoted)} rules: {promoted_labels}")
 
         return detections
 
@@ -134,7 +185,9 @@ class HybridPIIEngine:
         """Promote pending rules that have been seen >= threshold times.
 
         If auto=False (default): returns candidates for review without promoting.
-        If auto=True: promotes to context_rules.yaml and reloads the context detector.
+        If auto=True: promotes to context_rules.yaml, reloads the context detector,
+                       feeds promoted rules into the LSTM trainer as human-verified
+                       training data, and triggers a retrain.
 
         Returns list of promoted/promotable entries.
         """
@@ -143,6 +196,13 @@ class HybridPIIEngine:
             # Hot-reload: re-read context_rules.yaml and rebuild the context detector
             self.context_rules = load_yaml("context_rules.yaml")
             self.context_detector = ContextDetector(context_rules=self.context_rules)
+
+            # Feed promoted rules into the LSTM trainer as high-confidence training data
+            n_added = self.self_trainer.collect_from_promoted(result)
+            if n_added > 0:
+                self.self_trainer.flush_to_disk()
+                # Retrain with the new high-quality data
+                self.self_trainer.retrain()
         return result
 
     def manual_promote_rule(self, group_key: str, label: str, keywords: List[str] = None) -> bool:
@@ -150,6 +210,7 @@ class HybridPIIEngine:
 
         Use this when auto-suggested label is wrong — provide the right label.
         Hot-reloads the context detector after promotion.
+        Feeds the promoted rule into the LSTM trainer and triggers retrain.
 
         Args:
             group_key: The group key from review_pending() output.
@@ -159,10 +220,27 @@ class HybridPIIEngine:
         Returns:
             True if promoted successfully.
         """
+        # Get the full entry before promoting (need structure_patterns, co_labels)
+        pending = self.accumulator.get_pending()
+        entry = pending.get(group_key, {})
+
         ok = manual_promote(group_key=group_key, label=label, keywords=keywords)
         if ok:
             self.context_rules = load_yaml("context_rules.yaml")
             self.context_detector = ContextDetector(context_rules=self.context_rules)
+
+            # Feed into LSTM trainer as human-verified
+            promoted_data = [{
+                "label": label,
+                "keywords": keywords or entry.get("suggested_keywords", []),
+                "structure_patterns": entry.get("structure_patterns", []),
+                "co_occurring_labels": entry.get("co_occurring_labels", []),
+                "seen_count": entry.get("seen_count", 1),
+            }]
+            n_added = self.self_trainer.collect_from_promoted(promoted_data)
+            if n_added > 0:
+                self.self_trainer.flush_to_disk()
+                self.self_trainer.retrain()
         return ok
 
     def learning_stats(self) -> Dict[str, Any]:
@@ -180,3 +258,34 @@ class HybridPIIEngine:
             Dict with label_counts, source_counts, label_source_counts, total_runs.
         """
         return self.stats_tracker.get_stats()
+
+    def lstm_known_labels(self) -> List[str]:
+        """Return the list of PII labels the LSTM can currently predict.
+
+        Empty list means the model hasn't been trained yet — it's still collecting data.
+        Once trained, any label in this list will be auto-detected on future transcripts.
+        """
+        return self.self_trainer.known_labels()
+
+    def pattern_lstm_stats(self) -> Dict[str, Any]:
+        """Get stats about the pattern LSTM classifier.
+
+        Returns training data counts, model readiness, label distribution.
+        """
+        return self.self_trainer.get_stats()
+
+    def retrain_pattern_model(self, epochs: int = 50) -> Dict[str, Any]:
+        """Manually trigger retraining of the pattern LSTM classifier.
+
+        Use this after processing many transcripts to force a model update.
+        Returns full metrics: per-label P/R/F1, confusion matrix, training curves.
+        """
+        return self.self_trainer.retrain(epochs=epochs)
+
+    def metrics_history(self) -> Dict[str, Any]:
+        """Return the full metrics log across all training runs.
+
+        Each run contains: per-label precision/recall/F1, confusion matrix,
+        macro/weighted averages, hyperparameters, timestamps.
+        """
+        return self.self_trainer.get_metrics_history()
