@@ -1810,5 +1810,504 @@ runs:
     - 0.8193
     - 0.8193
     - 0.8193
-total_retrains: 4
-last_retrain: '2026-03-25T02:21:13.491678'
+- status: trained
+  timestamp: '2026-03-27T00:31:43.355807'
+  device: cpu
+  mixed_precision: false
+  num_examples: 402
+  train_size: 346
+  val_size: 86
+  num_labels: 50
+  num_keywords: 400
+  batch_size: 57
+  learning_rate: 0.002
+  weight_decay: 0.0005
+  label_smoothing: 0.1
+  max_grad_norm: 1.0
+  max_epochs: 50
+  stopped_epoch: 50
+  best_epoch: 40
+  early_stopped: false
+  best_val_loss: 1.3447
+  train_accuracy: 0.9509
+  val_accuracy: 0.8372
+  val_macro_precision: 0.8519
+  val_macro_recall: 0.9054
+  val_macro_f1: 0.8624
+  val_weighted_precision: 0.8496
+  val_weighted_recall: 0.8372
+  val_weighted_f1: 0.8254
+  val_per_label:
+    ACCOUNT_LAST4:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    AGE:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    BANK_ACCOUNT_LAST4:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    CARDMEMBER_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    CARD_SECURITY_CODE:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    CHILDREN_INFORMATION:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    COURT_CASE_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    CUSIP_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    DATE_OF_BIRTH:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 3
+    DISABILITY_STATUS:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    DRIVERS_LICENSE_NUMBER:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    EMAIL_ADDRESS:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    EMERGENCY_CONTACT_INFORMATION:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    EMPLOYEE_ID:
+      precision: 1.0
+      recall: 0.5
+      f1: 0.6667
+      support: 2
+    EMPLOYER_NAME:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    FICO_SCORE:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    GENERIC_LAST4:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    HEALTH_INSURANCE_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    HEALTH_PLAN_BENEFICIARY_NUMBER:
+      precision: 0.6667
+      recall: 1.0
+      f1: 0.8
+      support: 2
+    IBAN:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    INCOME:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    INSURANCE_POLICY:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 1
+    INVESTMENT_ACCOUNT_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    LICENSE_PLATE_NUMBER:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 1
+    MEDICAL_DEVICE_SERIAL:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    MEDICAL_RECORD_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    MEDICARE_MEDICAID_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    MORTGAGE_LOAN_INFO:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    MOTHERS_MAIDEN_NAME:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    MR_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    NATIONALITY:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    NATIONAL_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    NON_DRIVERS_ID:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 1
+    PASSPORT_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PERSON_FIRST_NAME:
+      precision: 0.6364
+      recall: 0.7
+      f1: 0.6667
+      support: 10
+    PERSON_LAST_NAME:
+      precision: 0.8571
+      recall: 0.5
+      f1: 0.6316
+      support: 12
+    PERSON_MIDDLE_NAME:
+      precision: 0.3333
+      recall: 1.0
+      f1: 0.5
+      support: 1
+    PHI:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PHONE_NUMBER:
+      precision: 0.75
+      recall: 1.0
+      f1: 0.8571
+      support: 3
+    PIN:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PRESCRIPTION_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PROFESSIONAL_LICENSE_NUMBER:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 1
+    PROPERTY_TAX_PARCEL:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PUBLIC_ASSISTANCE_RECEIPT:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 1
+    ROUTING_NUMBER:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    SSN:
+      precision: 1.0
+      recall: 0.6667
+      f1: 0.8
+      support: 3
+    STREET_ADDRESS:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    TAX_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    VIN:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+  val_confusion_matrix:
+    PERSON_FIRST_NAME:
+      PERSON_FIRST_NAME: 7
+      PERSON_MIDDLE_NAME: 1
+      PUBLIC_ASSISTANCE_RECEIPT: 1
+      PERSON_LAST_NAME: 1
+    PERSON_LAST_NAME:
+      PERSON_LAST_NAME: 6
+      PERSON_MIDDLE_NAME: 1
+      LICENSE_PLATE_NUMBER: 1
+      PERSON_FIRST_NAME: 4
+    EMPLOYEE_ID:
+      EMPLOYEE_ID: 1
+      NON_DRIVERS_ID: 1
+    PERSON_MIDDLE_NAME:
+      PERSON_MIDDLE_NAME: 1
+    INSURANCE_POLICY:
+      INSURANCE_POLICY: 1
+    DATE_OF_BIRTH:
+      DATE_OF_BIRTH: 3
+    SSN:
+      SSN: 2
+      PHONE_NUMBER: 1
+    DRIVERS_LICENSE_NUMBER:
+      INSURANCE_POLICY: 1
+    LICENSE_PLATE_NUMBER:
+      LICENSE_PLATE_NUMBER: 1
+    VIN:
+      VIN: 1
+    MEDICAL_RECORD_NUMBER:
+      MEDICAL_RECORD_NUMBER: 1
+    NATIONAL_ID:
+      NATIONAL_ID: 2
+    PRESCRIPTION_NUMBER:
+      PRESCRIPTION_NUMBER: 1
+    PROFESSIONAL_LICENSE_NUMBER:
+      PROFESSIONAL_LICENSE_NUMBER: 1
+    MEDICARE_MEDICAID_ID:
+      MEDICARE_MEDICAID_ID: 2
+    DISABILITY_STATUS:
+      DISABILITY_STATUS: 1
+    COURT_CASE_NUMBER:
+      COURT_CASE_NUMBER: 2
+    PHONE_NUMBER:
+      PHONE_NUMBER: 3
+    PHI:
+      PHI: 1
+    MEDICAL_DEVICE_SERIAL:
+      MEDICAL_DEVICE_SERIAL: 2
+    HEALTH_PLAN_BENEFICIARY_NUMBER:
+      HEALTH_PLAN_BENEFICIARY_NUMBER: 2
+    HEALTH_INSURANCE_ID:
+      HEALTH_INSURANCE_ID: 1
+    EMAIL_ADDRESS:
+      EMAIL_ADDRESS: 2
+    NATIONALITY:
+      NATIONALITY: 1
+    BANK_ACCOUNT_LAST4:
+      BANK_ACCOUNT_LAST4: 1
+    MOTHERS_MAIDEN_NAME:
+      MOTHERS_MAIDEN_NAME: 1
+    IBAN:
+      IBAN: 1
+    ROUTING_NUMBER:
+      PROFESSIONAL_LICENSE_NUMBER: 1
+    STREET_ADDRESS:
+      STREET_ADDRESS: 2
+    ACCOUNT_LAST4:
+      ACCOUNT_LAST4: 1
+    MR_NUMBER:
+      MR_NUMBER: 1
+    CARD_SECURITY_CODE:
+      CARD_SECURITY_CODE: 1
+    EMPLOYER_NAME:
+      EMPLOYER_NAME: 1
+    CARDMEMBER_ID:
+      CARDMEMBER_ID: 2
+    MORTGAGE_LOAN_INFO:
+      HEALTH_PLAN_BENEFICIARY_NUMBER: 1
+    PROPERTY_TAX_PARCEL:
+      PROPERTY_TAX_PARCEL: 1
+    INCOME:
+      INCOME: 1
+    FICO_SCORE:
+      FICO_SCORE: 1
+    INVESTMENT_ACCOUNT_NUMBER:
+      INVESTMENT_ACCOUNT_NUMBER: 2
+    CUSIP_NUMBER:
+      CUSIP_NUMBER: 1
+    EMERGENCY_CONTACT_INFORMATION:
+      EMERGENCY_CONTACT_INFORMATION: 1
+    PASSPORT_NUMBER:
+      PASSPORT_NUMBER: 1
+    PUBLIC_ASSISTANCE_RECEIPT:
+      PUBLIC_ASSISTANCE_RECEIPT: 1
+    GENERIC_LAST4:
+      GENERIC_LAST4: 1
+    NON_DRIVERS_ID:
+      NON_DRIVERS_ID: 1
+    PIN:
+      PIN: 1
+    AGE:
+      AGE: 1
+    TAX_ID:
+      TAX_ID: 1
+    CHILDREN_INFORMATION:
+      CHILDREN_INFORMATION: 2
+  train_macro_f1: 0.9796
+  train_weighted_f1: 0.9527
+  history_sample:
+    train_loss:
+    - 6.2962
+    - 5.9209
+    - 5.6111
+    - 5.1355
+    - 4.2583
+    - 3.6629
+    - 3.2346
+    - 2.8089
+    - 2.678
+    - 2.7376
+    - 2.6433
+    - 2.3481
+    - 2.3168
+    - 2.2647
+    - 2.1603
+    - 2.1826
+    - 2.1602
+    - 2.0996
+    - 2.0693
+    - 2.0837
+    - 2.0906
+    - 2.0346
+    - 2.1372
+    - 2.1633
+    - 2.0395
+    - 2.0606
+    - 2.035
+    - 2.0269
+    val_loss:
+    - 4.6975
+    - 4.2699
+    - 3.9025
+    - 3.4241
+    - 2.6971
+    - 1.9687
+    - 1.8303
+    - 1.597
+    - 1.5788
+    - 1.4995
+    - 1.4631
+    - 1.4292
+    - 1.4273
+    - 1.429
+    - 1.3991
+    - 1.3594
+    - 1.3702
+    - 1.3653
+    - 1.3509
+    - 1.3661
+    - 1.348
+    - 1.3447
+    - 1.3492
+    - 1.353
+    - 1.355
+    - 1.3554
+    - 1.3553
+    - 1.3553
+    train_acc:
+    - 0.0231
+    - 0.0549
+    - 0.0405
+    - 0.0636
+    - 0.1676
+    - 0.2803
+    - 0.4653
+    - 0.526
+    - 0.5809
+    - 0.5867
+    - 0.6329
+    - 0.6908
+    - 0.7168
+    - 0.7486
+    - 0.7948
+    - 0.8237
+    - 0.8815
+    - 0.8786
+    - 0.896
+    - 0.8613
+    - 0.9249
+    - 0.896
+    - 0.9191
+    - 0.9075
+    - 0.9017
+    - 0.9393
+    - 0.9191
+    - 0.9249
+    val_acc:
+    - 0.0349
+    - 0.0349
+    - 0.1047
+    - 0.2326
+    - 0.4419
+    - 0.593
+    - 0.6163
+    - 0.686
+    - 0.686
+    - 0.7326
+    - 0.7674
+    - 0.7791
+    - 0.7442
+    - 0.7326
+    - 0.7674
+    - 0.8372
+    - 0.8372
+    - 0.814
+    - 0.8256
+    - 0.8372
+    - 0.8605
+    - 0.8372
+    - 0.8372
+    - 0.8372
+    - 0.8488
+    - 0.8488
+    - 0.8488
+    - 0.8372
+total_retrains: 5
+last_retrain: '2026-03-27T00:31:43.355807'
