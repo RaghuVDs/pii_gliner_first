@@ -1,0 +1,467 @@
+# ======================================================================
+# REGEX RULES — Enterprise PII Detection Patterns
+# Every PII type has at least one regex fallback so detection works
+# even when GLiNER model is unavailable.
+# ======================================================================
+
+# -- GENERAL PERSONAL INFORMATION --
+
+EMAIL_ADDRESS:
+  - '([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})'
+
+PHONE_NUMBER:
+  # US: (123) 456-7890, 123-456-7890, +1 123 456 7890
+  # (?<![A-Za-z]\-) prevents matching inside policy/reference numbers like SF-229-4817362
+  - '(?<![A-Za-z]\-)(?<!\d)((?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4})(?!\d)(?!\-\d)'
+  # 7-digit local: 456-7890
+  - '(?<!\d)(\d{3}-\d{4})(?!\d)'
+  # International: +44 20 7123 4567, +91-9876543210
+  - '(?<!\d)(\+(?:44|91|61|49|33|86|81|82|55|52|39|34|31|46|47|48|90|65|60|63|64|66|27|20|7)\s*[\d\-\.\s]{7,14})(?!\d)'
+
+SSN:
+  # Standard: 123-45-6789
+  - '(?<!\d)(\d{3}-\d{2}-\d{4})(?!\d)'
+  # With spaces: 123 45 6789
+  - '(?<!\d)(\d{3}\s\d{2}\s\d{4})(?!\d)'
+
+IP_ADDRESS:
+  # IPv4: 192.168.1.1
+  - '(?<!\d)((?:\d{1,3}\.){3}\d{1,3})(?!\d)'
+  # IPv6 full/compressed
+  - '(?<![:\w])([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){7})(?![:\w])'
+  - '(?<![:\w])((?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4})(?![:\w])'
+
+URL:
+  - '(?i)\b(https?://[^\s<>\"''\)]{8,})'
+  - '(?i)\b(www\.[A-Za-z0-9][A-Za-z0-9.\-]+\.[A-Za-z]{2,}(?:/[^\s<>\"'']*)?)'
+
+STREET_ADDRESS:
+  # Standard: 123 Main Street, City, ST 12345
+  # (?<![A-Za-z0-9\-]) prevents matching numbers inside codes like "ICD-10"
+  # {1,60} limits the middle text to prevent runaway matches
+  - '(?i)(?<![A-Za-z0-9\-])(\d{1,5}\s+[A-Za-z0-9\s.,]{1,60}\b(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Circle|Cir|Way|Place|Pl|Terrace|Ter|Highway|Hwy|Parkway|Pkwy)\b\.?(?:[\s,]+(?:Apt|Suite|Ste|Unit|#)\s*[A-Za-z0-9]+)?(?:[\s,]+[A-Za-z\s]+[\s,]+[A-Za-z]{2}[\s,]+\d{5}(?:-\d{4})?)?)'
+  # PO Box
+  - '(?i)(P\.?\s*O\.?\s*Box\s+\d+(?:[\s,]+[A-Za-z\s]+[\s,]+[A-Za-z]{2}[\s,]+\d{5})?)'
+
+AGE:
+  # "42 years old", "aged 42", "age 42", "age: 42"
+  - '(?i)\bage[d]?\s*[:=]?\s*(\d{1,3})\b'
+  - '(?<!\d)(\d{1,3})\s*(?:years?\s*old|yrs?\s*old|y/?o)\b'
+
+GENDER:
+  - '(?i)\b(?:gender|sex)\s*[:=]\s*(male|female|non-?binary|transgender|trans|other|prefer not to say)\b'
+
+PERSON_FULL_NAME:
+  # "my name is [Title] X Y Z" — handles Dr., Mr., Mrs., etc.
+  - '(?:my name is|My name is|this is|This is)\s+(?:(?:Dr|Mr|Mrs|Ms|Miss|Prof|Officer|Sgt|Lt)\.\s+)?([A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){1,3})(?=[,.\s]|$)'
+  # "name is/was [Title] X Y Z" — "the other driver's name was Robert James Martinez"
+  - '(?i)\bname\s+(?:is|was)\s+(?:(?:Dr|Mr|Mrs|Ms|Miss|Prof|Officer)\.\s+)?([A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){1,3})(?=[,.\s]|$)'
+  # "Dr./Prof. FirstName LastName" — standalone title + name
+  - '(?:Dr|Prof)\.\s+([A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){1,2})(?=[,.\s;]|$)'
+  # "Officer/Detective FirstName LastName"
+  - '(?:Officer|Detective|Sergeant|Sgt\.?|Lieutenant|Lt\.?)\s+([A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){0,2})(?=[,.\s;]|$)'
+  # "FirstName LastName, Esq." — attorney suffix
+  - '([A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){1,2}),?\s+Esq\.?'
+  # "husband/wife/attorney, FirstName LastName"
+  - '(?i)(?:husband|wife|spouse|son|daughter|attorney)[,:]?\s+([A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){0,2})(?=[,.\s]|$)'
+  # "FirstName LastName, phone/cell/mobile" — contact context
+  - '([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,15}),?\s+(?:phone|cell|mobile|tel)\b'
+
+USERNAME:
+  - '(?i)(?:username|user\s*name|login|user\s*id)\s*[:=]\s*([A-Za-z0-9][A-Za-z0-9._\-]{2,31})\b'
+
+PASSWORD:
+  - '(?i)(?:password|passcode|passphrase)\s*[:=]?\s+([^\s]+?)(?=\.\s|\.$|\s|$)'
+
+# -- FINANCIAL --
+
+CREDIT_CARD_NUMBER:
+  # Continuous: Visa, MC, Discover, Amex, JCB, Diners, UnionPay
+  - '(?<!\d)(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12})(?!\d)'
+  - '(?<!\d)(3[47]\d{13})(?!\d)'
+  - '(?<!\d)(35(?:2[89]|[3-8]\d)\d{12})(?!\d)'
+  - '(?<!\d)(3(?:0[0-5]|[68]\d)\d{11})(?!\d)'
+  - '(?<!\d)(62[0-9]{14,17})(?!\d)'
+  # With spaces/dashes: Visa, MC, Discover
+  - '(?<!\d)(4\d{3}[\s-]\d{4}[\s-]\d{4}[\s-]\d{4})(?!\d)'
+  - '(?<!\d)(5[1-5]\d{2}[\s-]\d{4}[\s-]\d{4}[\s-]\d{4})(?!\d)'
+  - '(?<!\d)(6(?:011|5\d{2})[\s-]\d{4}[\s-]\d{4}[\s-]\d{4})(?!\d)'
+  # Amex with spaces/dashes: 3XXX XXXXXX XXXXX
+  - '(?<!\d)(3[47]\d{2}[\s-]\d{6}[\s-]\d{5})(?!\d)'
+
+CARD_EXPIRATION_DATE:
+  - '\b((?:0[1-9]|1[0-2])/\d{2})\b(?!/\d{2,4})'
+  # MM/YYYY format with keyword context (e.g., "expiration 09/2028")
+  - '(?i)(?:expir(?:ation|es|y)?|exp\.?\s*date|valid thru)\s*(?:is\s*|[:=]\s*)?(\d{2}/\d{4})\b'
+
+CARD_SECURITY_CODE:
+  - '(?i)(?:CID|CVV|CVC)\s*(?<!\d)(\d{3,4})(?!\d)'
+
+ROUTING_NUMBER:
+  - '(?<!\d)((?:0[0-9]|1[0-2]|2[1-9]|3[0-2])\d{7})(?!\d)'
+
+BANK_ACCOUNT_NUMBER:
+  - '(?i)(?:Account:\s*)([0-9]{8,17})\b'
+
+IBAN:
+  - '\b([A-Z]{2}[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16})\b'
+
+CRYPTO_WALLET:
+  # Bitcoin (1/3/bc1 prefixes)
+  - '\b(1[a-km-zA-HJ-NP-Z1-9]{25,34})\b'
+  - '\b(3[a-km-zA-HJ-NP-Z1-9]{25,34})\b'
+  - '\b(bc1[a-zA-HJ-NP-Z0-9]{25,39})\b'
+  # Ethereum
+  - '\b(0x[a-fA-F0-9]{40})\b'
+
+INCOME:
+  # Keyword + dollar amount (limit lookahead to 50 non-$ chars on same line)
+  - '(?i)(?:make|earn|salary|income|pay|compensation|revenue|earnings|gross|net)[^\$\n]{0,50}(\$\s*\d{1,3}(?:,\d{3})+(?:\.\d{2})?(?:\s*a\s*year|\s*annually|\s*per\s*year|\s*per\s*month|\s*a\s*month|\s*per\s*week|\s*a\s*week|\s*K|k)?)'
+  - '(?i)(\$\s*\d{1,3}(?:,\d{3})+(?:\.\d{2})?(?:k|K)?\s*(?:a\s*year|annually|per\s*year|per\s*month|a\s*month|per\s*week|a\s*week))'
+
+FICO_SCORE:
+  - '(?i)(?:credit score of |fico score of |score of |credit score is )\s*(\d{3})\b'
+
+BAND_LEVEL:
+  - '(?i)(?:band\s*level\s*)(\d+)\b'
+
+INSURANCE_POLICY:
+  - '(?i)(?:policy\s*(?:number|#|no\.?)\s*[:=]?\s*)([A-Z]{0,3}\d{5,15}[A-Z]?)\b'
+  - '(?i)(?:insurance\s*(?:id|number|#)\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
+
+MORTGAGE_LOAN_INFO:
+  - '(?i)(?:(?:mortgage|loan|auto loan)\s*(?:number|#|no\.?|id)\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
+
+# -- AMEX / IDENTITY --
+
+MR_NUMBER:
+  - '(?i)(?:MR Account|MR Number)?\s*(\d{4}-\d{4}-\d{4}-\d{4})'
+
+EMPLOYEE_ID:
+  # Numeric employee ID
+  - '(?i)(?:emp\s*id|employee\s*id|id)\s*#?\s*([0-9]{5,10})\b'
+  # Alphanumeric employee ID: "employee ID there is GBT-E-4817" (allows "is" bridge)
+  - '(?i)(?:employee\s*(?:id|number|#)\s*(?:(?:there\s+)?is\s+|[:=]\s*))([A-Z]{2,5}[\-][A-Z0-9\-]{2,15})\b'
+  # Badge number: "badge number UFI-33291", "badge number PPD-4419"
+  - '(?i)(?:badge\s*(?:number|#|no\.?)\s*[:=]?\s*)([A-Z]{2,5}[\-]?\d{3,10})\b'
+
+PIN:
+  - '(?i)(?:pin|passcode|ivr)\s*(?<!\d)(\d{4,6})(?!\d)'
+
+TRACK_DATA:
+  - '(%[B|b][0-9]{12,19}\^[^^]+\^[0-9]{4,}\?)'
+
+DEVICE_APP_DATA:
+  # MAC address
+  - '\b([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})\b'
+  # Device mentions
+  - '(?i)(iPhone\s*[^,]*|iOS\s*[\d.]+)'
+  # IMEI (15 digits)
+  - '(?<!\d)(\d{15})(?!\d)'
+
+TICKET_NUMBER:
+  - '(?i)(?:record\s*locator|confirmation\s*code|pnr|ticket\s*number)\s*#?\s*:?\s*([A-Z0-9]{6}|\d{13})\b'
+
+PARTNER_ACCOUNT_NUMBER:
+  - '(?i)(?:skymiles|honors|loyalty|partner\s*account(?:s|\s*number)?|frequent\s*flyer|rewards\s*number|member\s*id)\s*(?:is\s+|#\s*|:\s*|-|)?(?=[A-Z0-9]{5,20}\b)([A-Z0-9]*\d[A-Z0-9]*)\b'
+
+EMPLOYER_NAME:
+  - '(?i)(?:works? (?:for|at)|employed (?:by|at))[ \t]+([A-Z][a-zA-Z0-9 .,&''\-]+?)(?=\.|$|\n|,)'
+
+# -- COUNTRY-SPECIFIC --
+
+TAX_ID:
+  # ITIN format: 9XX-XX-XXXX (starts with 9)
+  - '(?<!\d)(9\d{2}-\d{2}-\d{4})(?!\d)'
+  # EIN format: XX-XXXXXXX
+  - '\b(\d{2}-\d{7})\b'
+
+PASSPORT_NUMBER:
+  # US: optional letter + 7-9 digits, or alphanumeric 6-9 chars
+  # Allow comma/"is" before/after "number" (e.g., "Passport, number 548293716")
+  - '(?i)(?:passport[,]?\s*(?:number|#|no\.?)\s*(?:is\s*|[:=]\s*)?)([A-Z]{0,2}\d{7,9})\b'
+  # Bare value after "passport:" or "passport is"
+  - '(?i)(?:passport\s*(?:is\s*|[:=]\s*))([A-Z0-9]{6,9})\b'
+
+DRIVERS_LICENSE_NUMBER:
+  # Allow comma/"is" before "number" (e.g., "license, number D12948376")
+  - '(?i)(?:(?:driver.?s?\s*)?license[,]?\s*(?:number|#|no\.?)?\s*(?:is\s*|[:=]\s*)?)([A-Z]{0,3}[- ]?[A-Z]{0,3}[- ]?\d{5,12})\b'
+
+GREEN_CARD_NUMBER:
+  # A-number format: A followed by 7-9 digits
+  - '(?i)(?:(?:alien|a)\s*(?:registration|#|number)\s*[:=]?\s*)(A?\d{7,9})\b'
+  - '(?i)(?:green\s*card\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9]{7,13})\b'
+
+NATIONAL_ID:
+  - '(?i)(?:national\s*(?:id|identification)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{5,20})\b'
+
+NON_DRIVERS_ID:
+  - '(?i)(?:(?:state|military|non.?driver)\s*(?:id|identification)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{5,15})\b'
+
+# -- DATES (contextual) --
+
+DATE_OF_BIRTH:
+  # Text format: March 12, 1979
+  - '(?i)(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}'
+  # Alt text: 12th of March, 1979
+  - '(?i)\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?),?\s+\d{4}'
+  # ISO: 1979-03-12
+  - '\b(?:\d{4}[-/]\d{1,2}[-/]\d{1,2})\b'
+
+RETIREMENT_DATE:
+  - '(?i)(?:retire[ds]?\s*(?:on|date)?\s*[:=]?\s*)((?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4})|(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}))'
+
+SEPARATION_DATE:
+  - '(?i)(?:(?:terminat|separat|fired|last day|end date)[^\n]{0,10}?\s*[:=]?\s*)((?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4})|(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}))'
+
+# -- CONTEXTUAL / SENSITIVE --
+
+PHI:
+  - '(?i)\b(Type [12] Diabetes|macular degeneration|cancer|hiv|aids|asthma|hypertension|epilepsy|depression|anxiety disorder|ptsd|bipolar|schizophrenia|alzheimer|parkinson|multiple sclerosis|copd|hepatitis [abc]|tuberculosis|lupus|arthritis|fibromyalgia|crohn|celiac|sickle cell)\b'
+
+BIOMETRIC_INFORMATION:
+  - '(?i)\b(fingerprint|voiceprint|faceprint|retina scan|iris scan|palm print|hand geometry|vein pattern|facial recognition|voice recognition|gait analysis|keystroke dynamics)\b'
+
+CRIMINAL_RECORD:
+  - '(?i)\b(felony|misdemeanor|arrest(?:ed)?|conviction|probation|parole|incarcerat|criminal record|criminal history|sex offender|dui|dwi|traffic violation)\b'
+
+DISABILITY_STATUS:
+  - '(?i)\b(disabled|disability|wheelchair|ada accommodation|accessibility need|hearing impaired|visually impaired|blind|deaf|mobility impairment|cognitive disability|learning disability|service animal)\b'
+
+GENETIC_INFORMATION:
+  - '(?i)\b(dna (?:test|profile|sample|result)|genetic (?:test|screening|marker|counseling|predisposition)|genome|chromosom|hereditary|brca[12]|genetic information)\b'
+
+ETHNICITY_OR_RACE:
+  - '(?i)(?:(?:race|ethnicity)\s*[:=]\s*)((?:caucasian|white|black|african[\s-]?american|hispanic|latino|latina|latinx|asian|pacific[\s-]?islander|native[\s-]?american|indigenous|biracial|multiracial|middle[\s-]?eastern|south[\s-]?asian)[a-z]*)'
+
+NATIONALITY:
+  - '(?i)(?:citizenship (?:in the\s+|of\s+)|citizen of\s+|national(?:ity)?\s*[:=]?\s*)([A-Z][a-zA-Z\s]+(?:and\s+[A-Z][a-zA-Z\s]+)?)'
+
+POLITICAL_OPINIONS:
+  - '(?i)\b(registered (?:democrat|republican|independent|libertarian|green party)|political (?:party|affiliation|opinion|belief)\s*[:=]\s*[A-Za-z]+|(?:democrat|republican|libertarian|green party|conservative|liberal|progressive) voter)\b'
+
+RELIGION:
+  - '(?i)(?:religion|faith|religious (?:affiliation|belief))\s*[:=]\s*([A-Za-z][A-Za-z\s]{2,30})'
+
+SEXUAL_ORIENTATION:
+  - '(?i)\b(same-sex|bisexual|heterosexual|homosexual|gay|lesbian|pansexual|asexual|queer|lgbtq)\b'
+
+MARITAL_OR_FAMILIAL_STATUS:
+  - '(?i)(?:marital\s*status\s*[:=]\s*)(single|married|divorced|widowed|separated|domestic partner|civil union)'
+
+VETERAN_STATUS:
+  - '(?i)\b(military veteran|active duty|veteran status|honorable discharge|service-connected|combat veteran|reserve duty|national guard member|disabled veteran|va benefits)\b'
+
+LEAVE_OF_ABSENCE_TYPE:
+  - '(?i)\b((?:medical|maternity|paternity|parental|bereavement|sabbatical|disability|military|family)\s*leave(?:\s*of\s*absence)?|fmla)\b'
+
+CHILDBEARING_STATUS:
+  - '(?i)\b(pregnant|pregnancy|expecting|maternity|prenatal|due date|trimester|gestational)\b'
+
+LEGAL_JUDGEMENT:
+  # Removed bare "lien" — too generic (matches "lien holder" in financial contexts)
+  # Kept compound forms: "tax lien", "judgment lien", "mechanic's lien"
+  - '(?i)\b(garnishment|court order|restraining order|judgement|bankruptcy|chapter [7-9]|chapter 1[1-3]|civil court|wage garnishment|tax lien|judgment lien|mechanic.s lien)\b'
+
+PUBLIC_ASSISTANCE_RECEIPT:
+  - '(?i)\b(child support|alimony|food stamps|snap benefits|welfare|medicaid|wic|public assistance|section 8|unemployment benefits|disability benefits)\b'
+
+EDUCATIONAL_AFFILIATIONS:
+  # University/college name after "from/at"
+  - '(?i)(?:(?:degree|graduated|studied|alumni|attended)\s+(?:from|at|in)\s+)([A-Z][a-zA-Z\s&''\-]+(?:University|College|Institute|School|Academy))\b'
+  # Degree type + field: "Bachelors degree in Finance"
+  - '(?i)((?:bachelor|master|associate|doctorate|phd|mba|md|jd|bs|ba|ms|ma).?s?\s*(?:degree)\s*(?:in|of)\s+[A-Za-z\s&]{3,30}?)(?=[,.\n]|\s+from)'
+
+EMPLOYMENT_HISTORY:
+  - '(?i)(?:(?:previously|formerly)\s+(?:worked|employed)\s+(?:at|for)\s+)([A-Z][a-zA-Z0-9 .,&''\-]+?)(?=\.|$|\n|,)'
+
+OCCUPATION:
+  - '(?i)(?:(?:work(?:s|ing|ed)?|serves?|serving)\s+as\s+(?:a\s+|an\s+)?)([A-Za-z][A-Za-z\s\-]{3,40}?)(?=[,.\n]|\s+(?:at|for|in|and|since|with))'
+
+SOCIAL_MEDIA_PROFILE:
+  # Social media URLs
+  - '(?i)((?:https?://)?(?:www\.)?(?:facebook\.com|fb\.com|twitter\.com|x\.com|instagram\.com|linkedin\.com|tiktok\.com|snapchat\.com|pinterest\.com|reddit\.com|youtube\.com)/[^\s<>\"'']{2,50})'
+  # @handles
+  - '(?<!\w)(@[A-Za-z0-9_]{2,30})\b'
+
+ONLINE_UNIQUE_IDENTIFIER:
+  # UUID v4
+  - '\b([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\b'
+  # Session tokens (long hex/base64)
+  - '(?i)(?:session[\s_-]*(?:id|token)|cookie[\s_-]*id|tracking[\s_-]*id)\s*[:=]\s*([A-Za-z0-9+/=_\-]{16,128})'
+
+MEMBERSHIP_OR_TRADE_UNIONS:
+  - '(?i)\b(union member|trade union|labor union|union representative|union dues|collective bargaining|afl-cio|teamsters|seiu|uaw)\b'
+
+CUSTOMER_STATUS:
+  - '(?i)(?:(?:customer|account|member)\s*status\s*[:=]\s*)(active|inactive|suspended|delinquent|deceased|closed|frozen|collections|charged off|bankrupt)'
+
+PAYMENT_HISTORY:
+  - '(?i)\b(past due|late payment|missed payment|delinquent payment|in collections|charged off|payment default|30 days late|60 days late|90 days late)\b'
+
+PERFORMANCE_RATING:
+  - '(?i)(?:(?:performance|review)\s*(?:rating|score|grade)\s*[:=]\s*)([1-5](?:\.\d)?(?:/5)?|(?:exceeds|meets|below)\s*expectations?|outstanding|satisfactory|unsatisfactory|needs improvement)'
+
+MARKETING_PREFERENCES:
+  - '(?i)\b(do not call|dnc|do not mail|do not email|marketing opt.?out|unsubscribe|privacy preference|opt.?out|do not solicit|do not contact)\b'
+
+CHILDREN_INFORMATION:
+  - '(?i)(?:\b(?:child|minor|dependent|kid|son|daughter)''?s?\s*(?:name|age|dob|date of birth)\s*[:=]\s*)([A-Za-z0-9][A-Za-z0-9\s,/\-]{1,40})'
+
+PARTIAL_CREDIT_CARD:
+  - '(?i)(?:ending in\s*|last \d of card\s*)(\d{4,5})\b'
+  # "card number is 3771" — 4 digits in card context (not followed by more digits)
+  - '(?i)(?:card\s*(?:number|#|no\.?)\s*(?:is\s*)?[:=]?\s*)(\d{4})(?![\s\-]?\d)'
+
+PARTIAL_SSN:
+  - '(?i)(?:last 4 of social|last 4 of ssn)\s*:?\s*(\d{4})\b'
+  - '(?i)(?:ssn\s*:?\s*)([xX*]{3}-[xX*]{2}-\d{4})\b'
+
+# -- GOVERNMENT (EXTENDED) --
+
+PLACE_OF_BIRTH:
+  - '(?i)(?:(?:born in|place of birth|birth ?place|city of birth)\s*[:=]?\s*)([A-Z][a-zA-Z\s,.\-]+?)(?=[.\n;]|$)'
+
+VISA_NUMBER:
+  - '(?i)(?:visa\s*(?:number|#|no\.?|id)\s*[:=]?\s*)([A-Z0-9]{6,12})\b'
+
+SELECTIVE_SERVICE_NUMBER:
+  - '(?i)(?:selective service\s*(?:number|#|no\.?)\s*[:=]?\s*)(\d{10,11})\b'
+
+VOTER_REGISTRATION_NUMBER:
+  - '(?i)(?:voter\s*(?:registration|id)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9]{6,15})\b'
+
+KNOWN_TRAVELER_NUMBER:
+  - '(?i)(?:(?:known traveler|global entry|tsa precheck|nexus|sentri)\s*(?:number|#|no\.?|id)\s*(?:is\s*|[:=]\s*)?)([A-Z0-9]{6,15})\b'
+
+PROFESSIONAL_LICENSE_NUMBER:
+  - '(?i)(?:(?:bar|medical license|cpa|nursing license|professional license)\s*(?:number|#|no\.?)\s*[:=]?\s*)([A-Z0-9\-]{4,15})\b'
+  # NPI: 10-digit National Provider Identifier (allows "NPI number", "NPI:", "NPI is")
+  - '(?i)(?:NPI\s*(?:number|#|no\.?)?\s*(?:is\s+|[:=]\s*)?)(\d{10})\b'
+
+# -- FINANCIAL (EXTENDED) --
+
+SWIFT_BIC_CODE:
+  # 8 or 11 char SWIFT/BIC: 6 letters + 2 alphanum + optional 3 alphanum
+  - '(?i)(?:(?:swift|bic)\s*(?:code)?\s*[:=]?\s*)([A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b'
+
+INVESTMENT_ACCOUNT_NUMBER:
+  # Require at least one digit in the captured value to avoid matching bare words like "account"
+  - '(?i)(?:(?:brokerage|ira|401\(?k\)?|403\(?b\)?|hsa|529|pension|annuity|trust|margin|securities|mutual fund)\s*(?:account|acct)?\s*(?:number|#|no\.?|id)?\s*[:=]?\s*)([A-Z0-9\-]*\d[A-Z0-9\-]{3,19})\b'
+  # Contextual: "participant ID", "account number" with alphanumeric ID prefix
+  - '(?i)(?:participant\s*(?:id|number|#)\s*(?:is\s*|[:=]\s*)?)([A-Z]{1,5}[\-][A-Z0-9]{4,15})\b'
+
+CUSIP_NUMBER:
+  # 9-char CUSIP: 6 alphanum issuer + 2 alphanum issue + 1 check digit
+  # Contextual: require "cusip" keyword nearby to avoid false matches
+  - '(?i)(?:cusip\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9]{6}[A-Z0-9]{2}[0-9])\b'
+
+CREDIT_REPORT_ID:
+  - '(?i)(?:(?:credit report|credit bureau|equifax|experian|transunion)\s*(?:file|consumer|id|number|#)\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
+
+EBT_CARD_NUMBER:
+  - '(?i)(?:ebt\s*(?:card)?\s*(?:number|#|no\.?)?\s*[:=]?\s*)(\d{16})\b'
+
+DIGITAL_PAYMENT_ACCOUNT:
+  # PayPal/Venmo/Zelle email
+  - '(?i)(?:(?:paypal|venmo|zelle)\s*(?:account|id|handle|email)?\s*[:=]?\s*)([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})'
+  # Cash App $cashtag
+  - '(?i)(?:(?:cash\s*app|cashtag)\s*[:=]?\s*)(\$[A-Za-z][A-Za-z0-9_\-]{1,20})\b'
+
+WIRE_TRANSFER_REFERENCE:
+  - '(?i)(?:(?:wire transfer|wire)\s*(?:reference|ref|number|#|confirmation)\s*[:=]?\s*)([A-Z0-9\-]{8,25})\b'
+
+GIFT_CARD_NUMBER:
+  - '(?i)(?:gift\s*card\s*(?:number|#|no\.?)?\s*[:=]?\s*)(\d{10,19})\b'
+
+TAX_RETURN_DATA:
+  - '(?i)(?:(?:adjusted gross income|agi|taxable income)\s*[:=]?\s*)(\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?)'
+
+PROPERTY_TAX_PARCEL:
+  - '(?i)(?:(?:parcel|tax parcel|lot)\s*(?:number|#|no\.?|id)\s*[:=]?\s*)([A-Z0-9\-]{5,25})\b'
+
+ESCROW_ACCOUNT_NUMBER:
+  - '(?i)(?:escrow\s*(?:account)?\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
+
+FINRA_CRD_NUMBER:
+  - '(?i)(?:(?:crd|finra)\s*(?:number|#|no\.?)?\s*[:=]?\s*)(\d{4,8})\b'
+
+BANKRUPTCY_CASE_NUMBER:
+  - '(?i)(?:bankruptcy\s*(?:case)?\s*(?:number|#|no\.?)?\s*[:=]?\s*)(\d{2}-\d{4,8})\b'
+
+CHILD_SUPPORT_CASE_NUMBER:
+  - '(?i)(?:(?:child support|alimony)\s*(?:case|account)?\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{5,20})\b'
+
+HEALTH_INSURANCE_ID:
+  - '(?i)(?:(?:health insurance|health plan)\s*(?:id|number|#|claim number)\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
+
+WORKERS_COMP_CLAIM_NUMBER:
+  - '(?i)(?:(?:workers comp|workers compensation|workplace injury)\s*(?:claim)?\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{5,20})\b'
+
+# -- MEDICAL / HIPAA --
+
+MEDICAL_RECORD_NUMBER:
+  # Require at least one digit to avoid matching plain words like "there"
+  - '(?i)(?:(?:medical record|mrn|patient id|chart)\s*(?:number|#|no\.?)?\s*[:=]?\s*)((?=[A-Z0-9\-]*\d)[A-Z0-9\-]{5,20})\b'
+  # Handles conversational "is" bridge: "medical record number there is SMC-00482917"
+  - '(?i)(?:(?:medical record|mrn|patient id|chart)\s*(?:number|#|no\.?)?\s+(?:there\s+)?is\s+)((?=[A-Z0-9\-]*\d)[A-Z0-9\-]{5,20})\b'
+
+MEDICARE_MEDICAID_ID:
+  # MBI without dashes: 1EK4TA2HY74 (11 chars: digit, letter, alphanum×9)
+  - '(?i)(?:(?:medicare|mbi)\s*(?:beneficiary|id|number|#)?\s*[:=]?\s*)([0-9][A-Z][A-Z0-9]{8,9})\b'
+  # MBI with dashes: 1EK4-TA2-HY74 (handles "Medicare Beneficiary ID is ...")
+  - '(?i)(?:(?:medicare|mbi)\s*(?:beneficiary\s*)?(?:id|number|#)?\s*(?:(?:is|[:=])\s*)?)([1-9][A-Z][A-Z0-9]\d[\-][A-Z][A-Z0-9]\d[\-][A-Z][A-Z0-9]\d{2})\b'
+  - '(?i)(?:medicaid\s*(?:id|number|#)\s*[:=]?\s*)([A-Z0-9]{8,15})\b'
+
+PRESCRIPTION_NUMBER:
+  - '(?i)(?:(?:prescription|rx)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{6,15})\b'
+
+STUDENT_ID:
+  - '(?i)(?:student\s*(?:id|number|#|identification)\s*[:=]?\s*)([A-Z0-9\-]{4,15})\b'
+
+# -- EMPLOYMENT (EXTENDED) --
+
+PAYROLL_NUMBER:
+  - '(?i)(?:payroll\s*(?:number|#|no\.?|id)\s*[:=]?\s*)([A-Z0-9\-]{4,15})\b'
+
+E_VERIFY_CASE_NUMBER:
+  - '(?i)(?:e-?verify\s*(?:case)?\s*(?:number|#|no\.?|id)\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
+
+# -- DIGITAL SECURITY --
+
+API_KEY:
+  - '(?i)(?:(?:api[_\s\-]?key|api[_\s\-]?token|api[_\s\-]?secret|access[_\s\-]?key)\s*[:=]\s*)([A-Za-z0-9+/=_\-]{16,128})'
+
+SSH_KEY:
+  - '(ssh-(?:rsa|ed25519|dss|ecdsa)\s+[A-Za-z0-9+/=]{40,})'
+
+# -- VEHICLE & PROPERTY --
+
+VIN:
+  # 17 chars, excludes I, O, Q
+  - '\b([A-HJ-NPR-Z0-9]{17})\b'
+
+LICENSE_PLATE_NUMBER:
+  - '(?i)(?:(?:license plate|plate|tag)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9]{1,4}[\s\-]?[A-Z0-9]{2,5})\b'
+  # "plate number was [State] FGR-8821" — allows "was" + optional state between keyword and value
+  - '(?i)(?:(?:license plate|plate|tag)\s*(?:number|#|no\.?)?\s+(?:was|is)\s+(?:[A-Z][a-z]+\s+)?)([A-Z]{2,4}[\-\s][A-Z0-9]{2,5})\b'
+
+# -- LEGAL & CRIMINAL --
+
+COURT_CASE_NUMBER:
+  - '(?i)(?:(?:case|docket|court case)\s*(?:number|#|no\.?)\s*[:=]?\s*)([A-Z0-9][\-:A-Z0-9]{4,20})\b'
+  # Police/incident/accident report numbers (e.g., "PD report number 2026-PX-0028471")
+  - '(?i)(?:(?:police|pd|incident|accident)\s*(?:report)?\s*(?:number|#|no\.?)\s*[:=]?\s*)([A-Z0-9][\-:A-Z0-9]{4,20})\b'
+  - '(?i)(?:report\s*(?:number|#|no\.?)\s*[:=]?\s*)(\d{4}[\-][A-Z]{1,3}[\-]\d{4,12})\b'
+
+# -- COMMUNICATION & UTILITY --
+
+UTILITY_ACCOUNT_NUMBER:
+  - '(?i)(?:(?:utility|electric|gas|water|sewer)\s*(?:account|acct)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
+
+SHIPPING_TRACKING_NUMBER:
+  # UPS: starts with 1Z
+  - '\b(1Z[A-Z0-9]{16})\b'
+  # Contextual: "tracking number: ..."
+  - '(?i)(?:(?:tracking|shipment)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9]{10,30})\b'
+

@@ -1,0 +1,50 @@
+version: "3.9"
+
+# Development overrides — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Adds bind-mount volumes for live code reloading on both backend and frontend.
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - ./backend/app:/app/app:cached
+      - ./backend/alembic:/app/alembic:cached
+      - ./backend/tests:/app/tests:cached
+      - ./backend/pyproject.toml:/app/pyproject.toml:ro
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+    environment:
+      - LOG_LEVEL=debug
+      - DEBUG=1
+
+  celery-worker:
+    volumes:
+      - ./backend/app:/app/app:cached
+    command: >
+      watchfiles
+        --filter python
+        'celery -A app.celery_app worker --loglevel=debug --concurrency=2 -Q default,pii_detection,reports'
+        /app/app
+    environment:
+      - LOG_LEVEL=debug
+      - DEBUG=1
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - ./frontend/src:/app/src:cached
+      - ./frontend/public:/app/public:cached
+      - ./frontend/package.json:/app/package.json:ro
+      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - WATCHPACK_POLLING=true
