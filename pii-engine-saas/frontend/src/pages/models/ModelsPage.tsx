@@ -139,29 +139,29 @@ const ModelsPage: React.FC = () => {
     },
     {
       title: "Accuracy",
-      dataIndex: "accuracy",
+      dataIndex: "val_accuracy",
       key: "accuracy",
-      render: (v: number) => `${(v * 100).toFixed(1)}%`,
+      render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
     },
     {
       title: "F1 Score",
-      dataIndex: "f1_score",
+      dataIndex: "val_weighted_f1",
       key: "f1_score",
-      render: (v: number) => `${(v * 100).toFixed(1)}%`,
+      render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
     },
     {
       title: "Labels",
-      dataIndex: "labels_count",
+      dataIndex: "num_labels",
       key: "labels_count",
     },
     {
       title: "Training Data",
-      dataIndex: "training_examples_count",
+      dataIndex: "num_examples",
       key: "training_examples_count",
     },
     {
       title: "Epochs",
-      dataIndex: "epochs",
+      dataIndex: "train_size",
       key: "epochs",
     },
     {
@@ -215,7 +215,7 @@ const ModelsPage: React.FC = () => {
             <Col span={6}>
               <Statistic
                 title="Accuracy"
-                value={(activeModel.accuracy * 100).toFixed(1)}
+                value={((activeModel.val_accuracy || 0) * 100).toFixed(1)}
                 suffix="%"
                 prefix={<CheckCircleOutlined />}
                 valueStyle={{ color: "#3f8600" }}
@@ -224,14 +224,14 @@ const ModelsPage: React.FC = () => {
             <Col span={6}>
               <Statistic
                 title="F1 Score"
-                value={(activeModel.f1_score * 100).toFixed(1)}
+                value={((activeModel.val_weighted_f1 || 0) * 100).toFixed(1)}
                 suffix="%"
               />
             </Col>
             <Col span={6}>
               <Statistic
                 title="Labels"
-                value={activeModel.labels_count}
+                value={activeModel.num_labels}
               />
             </Col>
             <Col span={6}>
@@ -286,7 +286,7 @@ const ModelsPage: React.FC = () => {
             <Table
               dataSource={
                 metrics?.per_label
-                  ? Object.entries(metrics.per_label).map(
+                  ? Object.entries(metrics?.metrics_detail?.val_per_label || metrics?.per_label).map(
                       ([label, m]) => ({
                         key: label,
                         label,
@@ -306,19 +306,19 @@ const ModelsPage: React.FC = () => {
                   title: "Precision",
                   dataIndex: "precision",
                   key: "precision",
-                  render: (v: number) => `${(v * 100).toFixed(1)}%`,
+                  render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
                 },
                 {
                   title: "Recall",
                   dataIndex: "recall",
                   key: "recall",
-                  render: (v: number) => `${(v * 100).toFixed(1)}%`,
+                  render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
                 },
                 {
                   title: "F1",
-                  dataIndex: "f1_score",
+                  dataIndex: "val_weighted_f1",
                   key: "f1_score",
-                  render: (v: number) => `${(v * 100).toFixed(1)}%`,
+                  render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
                 },
                 {
                   title: "Support",
