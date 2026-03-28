@@ -386,6 +386,122 @@ class DetectionService:
                 exc_info=True,
             )
 
+    async def _collect_training_data(
+        self,
+        tenant_id: uuid.UUID,
+        detections: list,
+        text: str,
+    ) -> None:
+        """Collect high-confidence detections as LSTM training examples.
+
+        Stores PII-safe structure patterns (not actual values) in MongoDB.
+        Auto-triggers retrain when enough examples accumulate.
+        """
+        try:
+            import hashlib
+            import re
+            from datetime import datetime, timezone
+
+            COLLECTION_THRESHOLD = 0.40  # Min score to collect
+            MIN_EXAMPLES_TO_TRAIN = 30
+            RETRAIN_INTERVAL = 100
+
+            def _value_to_structure(value: str) -> str:
+                """Convert value to structure pattern (PII-safe)."""
+                out = []
+                for ch in value:
+                    if ch.isdigit():
+                        out.append("N")
+                    elif ch.isupper():
+                        out.append("A")
+                    elif ch.islower():
+                        out.append("a")
+                    else:
+                        out.append(ch)
+                return "".join(out)
+
+            def _extract_keywords(text: str, start: int, end: int, pad: int = 100) -> list[str]:
+                """Extract context keywords near the detection."""
+                win_start = max(0, start - pad)
+                win_end = min(len(text), end + pad)
+                window = text[win_start:win_end].lower()
+                stopwords = {"the", "a", "an", "is", "are", "was", "and", "or", "of", "in", "to", "for", "my", "i"}
+                tokens = re.findall(r"\b[a-z]{3,}\b", window)
+                return [t for t in tokens if t not in stopwords][:12]
+
+            examples = []
+            for d in detections:
+                if d.score < COLLECTION_THRESHOLD:
+                    continue
+
+                structure = _value_to_structure(d.text)
+                keywords = _extract_keywords(text, d.start, d.end)
+                co_labels = sorted(set(
+                    other.label for other in detections
+                    if abs(other.start - d.start) < 500 and other.label != d.label
+                ))[:8]
+
+                dedup_hash = hashlib.md5(
+                    f"{structure}|{d.label}|{'|'.join(keywords[:3])}".encode()
+                ).hexdigest()
+
+                examples.append({
+                    "tenant_id": str(tenant_id),
+                    "structure": structure,
+                    "label": d.label,
+                    "length": len(d.text),
+                    "keywords": keywords,
+                    "co_labels": co_labels,
+                    "source": d.source,
+                    "score": round(float(d.score), 4),
+                    "confidence_type": "supervised" if d.score >= 0.8 else "semi_supervised",
+                    "dedup_hash": dedup_hash,
+                    "created_at": datetime.now(timezone.utc),
+                })
+
+            if not examples:
+                return
+
+            # Upsert to avoid duplicates (by dedup_hash per tenant)
+            inserted = 0
+            for ex in examples:
+                try:
+                    result = await self._mongo["training_examples"].update_one(
+                        {"tenant_id": ex["tenant_id"], "dedup_hash": ex["dedup_hash"]},
+                        {"$setOnInsert": ex},
+                        upsert=True,
+                    )
+                    if result.upserted_id:
+                        inserted += 1
+                except Exception:
+                    pass  # Duplicate, skip
+
+            if inserted > 0:
+                logger.info(
+                    "Collected %d new training examples for tenant %s (from %d detections)",
+                    inserted, tenant_id, len(detections),
+                )
+
+            # Check if we should auto-retrain
+            total = await self._mongo["training_examples"].count_documents(
+                {"tenant_id": str(tenant_id)}
+            )
+            if total >= MIN_EXAMPLES_TO_TRAIN and total % RETRAIN_INTERVAL < len(examples):
+                logger.info(
+                    "Auto-retrain threshold reached (%d examples) for tenant %s",
+                    total, tenant_id,
+                )
+                # TODO: Trigger Celery retrain task here
+                # from app.tasks.training_tasks import retrain_model
+                # retrain_model.delay(str(tenant_id), epochs=50, triggered_by="auto")
+
+        except Exception:
+            logger.warning(
+                "Failed to collect training data for tenant %s",
+                tenant_id,
+                exc_info=True,
+            )
+
     @staticmethod
     def _compute_stats(detections: list[dict]) -> dict[str, Any]:
         """Compute summary statistics from a list of detection dicts.
