@@ -39,7 +39,7 @@ const ModelsPage: React.FC = () => {
   const [versions, setVersions] = useState<ModelVersion[]>([]);
   const [metricsHistory, setMetricsHistory] = useState<ModelMetrics[]>([]);
   const [loading, setLoading] = useState(true);
-  const [retrainEpochs, setRetrainEpochs] = useState<number>(50);
+  const RETRAIN_EPOCHS = 200; // Fixed - early stopping handles convergence
   const [retraining, setRetraining] = useState(false);
   const [retrainResult, setRetrainResult] = useState<InlineRetrainResult | null>(null);
 
@@ -90,7 +90,7 @@ const ModelsPage: React.FC = () => {
     setRetraining(true);
     setRetrainResult(null);
     try {
-      const result = await modelsApi.triggerRetrain(retrainEpochs);
+      const result = await modelsApi.triggerRetrain(RETRAIN_EPOCHS);
       setRetrainResult(result);
       if (result.status === "trained") {
         message.success(
@@ -360,14 +360,9 @@ const ModelsPage: React.FC = () => {
                 Run training immediately using all collected training data.
               </Text>
               <Space align="center" size="middle">
-                <InputNumber
-                  min={1}
-                  max={500}
-                  value={retrainEpochs}
-                  onChange={(v) => setRetrainEpochs(v || 50)}
-                  addonBefore="Epochs"
-                  style={{ width: 160 }}
-                />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Max 200 epochs with early stopping (patience=20)
+                </Text>
                 <Button
                   type="primary"
                   icon={retraining ? <SyncOutlined spin /> : <ThunderboltOutlined />}
