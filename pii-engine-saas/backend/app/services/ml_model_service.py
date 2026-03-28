@@ -5,12 +5,17 @@ activation, metrics, and MinIO artifact storage.
 
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
+import os
+import shutil
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import yaml
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -139,6 +144,164 @@ class MLModelService:
             "tenant_id": str(tenant_id),
             "epochs": epochs,
         }
+
+    # ------------------------------------------------------------------
+    # Inline retrain (no Celery required)
+    # ------------------------------------------------------------------
+
+    async def inline_retrain(
+        self,
+        tenant_id: uuid.UUID,
+        epochs: int | None = None,
+        triggered_by: uuid.UUID | None = None,
+        **_extra,
+    ) -> dict[str, Any]:
+        """Run model retraining inline without Celery.
+
+        1. Fetches training examples from MongoDB
+        2. Writes them to a temporary YAML file
+        3. Runs SelfTrainer.retrain() in a thread pool
+        4. Saves the result as a new MLModelVersion in PostgreSQL
+        5. Returns the training results
+
+        Args:
+            tenant_id: Owning tenant.
+            epochs: Number of training epochs. If None, auto-determined.
+            triggered_by: User who triggered the retrain.
+
+        Returns:
+            Training results dict.
+        """
+        from app.core.mongodb import mongodb_client
+
+        mongo = mongodb_client.get_database()
+        collection = mongo["training_examples"]
+
+        # 1. Fetch all training examples for this tenant from MongoDB
+        query = {"tenant_id": str(tenant_id)}
+        cursor = collection.find(query)
+        examples = []
+        async for doc in cursor:
+            examples.append({
+                "structure": doc.get("structure", ""),
+                "label": doc.get("label") or doc.get("entity_type", "UNKNOWN_PII"),
+                "length": doc.get("length", len(doc.get("structure", ""))),
+                "keywords": doc.get("keywords", []),
+                "co_labels": doc.get("co_labels", []),
+                "source": doc.get("source", "unknown"),
+                "score": doc.get("score", 0.5),
+            })
+
+        if not examples:
+            return {
+                "status": "skipped",
+                "reason": "No training examples found in MongoDB for this tenant.",
+                "num_examples": 0,
+            }
+
+        # 2. Write to a temporary YAML file
+        tmp_dir = tempfile.mkdtemp(prefix="pii_train_")
+        training_data_path = os.path.join(tmp_dir, "training_data.yaml")
+        model_path = os.path.join(tmp_dir, "model.pt")
+        vocab_path = os.path.join(tmp_dir, "vocab.yaml")
+
+        training_data = {
+            "examples": examples,
+            "total_count": len(examples),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+        }
+        with open(training_data_path, "w", encoding="utf-8") as f:
+            yaml.dump(training_data, f, default_flow_style=False, allow_unicode=True)
+
+        # 3. Run SelfTrainer.retrain() in a thread pool
+        def _run_training():
+            from app.engine.ml.trainer import SelfTrainer
+            trainer = SelfTrainer(
+                training_data_path=training_data_path,
+                model_path=model_path,
+                vocab_path=vocab_path,
+            )
+            return trainer.retrain(epochs=epochs)
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, _run_training)
+
+        if result.get("status") != "trained":
+            # Clean up temp files
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            return result
+
+        # 4. Save the result as a new MLModelVersion in PostgreSQL
+        model_bytes = b""
+        vocab_bytes = b""
+        try:
+            if os.path.exists(model_path):
+                with open(model_path, "rb") as f:
+                    model_bytes = f.read()
+            if os.path.exists(vocab_path):
+                with open(vocab_path, "rb") as f:
+                    vocab_bytes = f.read()
+        except Exception:
+            logger.warning("Failed to read model artifacts from temp dir.", exc_info=True)
+
+        metrics = {
+            "num_labels": result.get("num_labels", 0),
+            "num_examples": result.get("num_examples", 0),
+            "train_size": result.get("train_size"),
+            "val_size": result.get("val_size"),
+            "val_accuracy": result.get("val_accuracy"),
+            "val_weighted_f1": result.get("val_weighted_f1"),
+            "metrics_detail": {
+                "val_per_label": result.get("val_per_label", {}),
+                "val_macro_f1": result.get("val_macro_f1"),
+                "val_macro_precision": result.get("val_macro_precision"),
+                "val_macro_recall": result.get("val_macro_recall"),
+                "train_accuracy": result.get("train_accuracy"),
+                "train_weighted_f1": result.get("train_weighted_f1"),
+                "best_epoch": result.get("best_epoch"),
+                "stopped_epoch": result.get("stopped_epoch"),
+                "early_stopped": result.get("early_stopped"),
+                "best_val_loss": result.get("best_val_loss"),
+                "history_sample": result.get("history_sample", {}),
+                "val_confusion_matrix": result.get("val_confusion_matrix", {}),
+            },
+            "training_trigger": "manual",
+        }
+
+        version_record = None
+        if model_bytes and vocab_bytes:
+            try:
+                version_record = await self.save_model_version(
+                    tenant_id=tenant_id,
+                    metrics=metrics,
+                    model_bytes=model_bytes,
+                    vocab_bytes=vocab_bytes,
+                )
+            except Exception:
+                logger.error(
+                    "Failed to save model version for tenant %s.",
+                    tenant_id,
+                    exc_info=True,
+                )
+
+        # Clean up temp files
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+        # 5. Return the training results
+        result["version_id"] = version_record.id if version_record else None
+        result["version_number"] = version_record.version if version_record else None
+
+        logger.info(
+            "Inline retrain completed for tenant %s: %d examples, %d labels, "
+            "val_f1=%.3f, version=%s",
+            tenant_id,
+            result.get("num_examples", 0),
+            result.get("num_labels", 0),
+            result.get("val_weighted_f1", 0),
+            version_record.version if version_record else "N/A",
+        )
+
+        return result
 
     # ------------------------------------------------------------------
     # Activate version
@@ -420,6 +583,11 @@ async def get_active(db=None, **kw):
 async def trigger_retrain(db=None, **kw):
     db = db or kw.pop("db", None)
     return await MLModelService(db).trigger_retrain(**kw)
+
+
+async def inline_retrain(db=None, **kw):
+    db = db or kw.pop("db", None)
+    return await MLModelService(db).inline_retrain(**kw)
 
 
 async def get_retrain_status(db=None, **kw):

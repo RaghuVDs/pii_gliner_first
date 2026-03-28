@@ -345,6 +345,7 @@ class LearningService:
         page: int = 1,
         page_size: int = 50,
         label_filter: str | None = None,
+        entity_type: str | None = None,
         **_extra,
     ) -> dict[str, Any]:
         """List training examples for a tenant.
@@ -354,13 +355,19 @@ class LearningService:
             page: 1-indexed page.
             page_size: Items per page.
             label_filter: Optional filter by entity_type / label.
+            entity_type: Alias for label_filter (from API query param).
 
         Returns:
             Paginated dict.
         """
+        effective_filter = label_filter or entity_type
         query: dict[str, Any] = {"tenant_id": str(tenant_id)}
-        if label_filter:
-            query["entity_type"] = label_filter
+        if effective_filter:
+            # Support both 'label' and legacy 'entity_type' field names
+            query["$or"] = [
+                {"label": effective_filter},
+                {"entity_type": effective_filter},
+            ]
 
         total = await self._mongo["training_examples"].count_documents(query)
 
@@ -409,10 +416,15 @@ class LearningService:
 
         total = await self._mongo["training_examples"].count_documents(base_query)
 
-        # By label
+        # By label -- support both 'label' and legacy 'entity_type' field names
         label_pipeline = [
             {"$match": base_query},
-            {"$group": {"_id": "$entity_type", "count": {"$sum": 1}}},
+            {
+                "$group": {
+                    "_id": {"$ifNull": ["$label", {"$ifNull": ["$entity_type", "unknown"]}]},
+                    "count": {"$sum": 1},
+                }
+            },
             {"$sort": {"count": -1}},
         ]
         by_label: dict[str, int] = {}

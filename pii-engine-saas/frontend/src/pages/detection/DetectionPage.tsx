@@ -19,8 +19,10 @@ import {
   EyeInvisibleOutlined,
   CopyOutlined,
   ClearOutlined,
+  DatabaseOutlined,
 } from "@ant-design/icons";
 import { detectionApi } from "@/api/detection";
+import { learningApi } from "@/api/learning";
 import { Detection, DetectionStats } from "@/types/models";
 import { DetectionSource } from "@/types/enums";
 import SourceBadge from "@/components/common/SourceBadge";
@@ -53,6 +55,7 @@ const DetectionPage: React.FC = () => {
   const [redactedText, setRedactedText] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"detect" | "redact">("detect");
+  const [trainingDataCount, setTrainingDataCount] = useState<number | null>(null);
 
   const handleDetect = useCallback(async () => {
     if (!inputText.trim()) {
@@ -78,6 +81,11 @@ const DetectionPage: React.FC = () => {
         ? ` in ${result.processing_time_ms}ms`
         : "";
       message.success(`Found ${count} PII entities${timeInfo}`);
+      // Fetch training data count in background
+      learningApi
+        .getTrainingStats()
+        .then((s) => setTrainingDataCount(s.total_examples ?? s.total ?? null))
+        .catch(() => {});
     } catch {
       message.error("Detection failed");
     } finally {
@@ -106,6 +114,11 @@ const DetectionPage: React.FC = () => {
         result.detection_count ??
         resultDetections.length;
       message.success(`Redacted ${count} PII entities`);
+      // Fetch training data count in background
+      learningApi
+        .getTrainingStats()
+        .then((s) => setTrainingDataCount(s.total_examples ?? s.total ?? null))
+        .catch(() => {});
     } catch {
       message.error("Redaction failed");
     } finally {
@@ -314,23 +327,37 @@ const DetectionPage: React.FC = () => {
             {stats && (
               <Card size="small">
                 <Row gutter={16}>
-                  <Col span={8}>
+                  <Col span={6}>
                     <Statistic
                       title="Total Detections"
                       value={stats.total}
                     />
                   </Col>
-                  <Col span={8}>
+                  <Col span={6}>
                     <Statistic
                       title="PII Types"
                       value={Object.keys(stats.by_type || {}).length}
                     />
                   </Col>
-                  <Col span={8}>
+                  <Col span={6}>
                     <Statistic
                       title="Sources"
                       value={Object.keys(stats.by_source || {}).length}
                     />
+                  </Col>
+                  <Col span={6}>
+                    {trainingDataCount !== null && (
+                      <Tooltip title="Total training examples collected across all detection runs">
+                        <div>
+                          <Statistic
+                            title="Training Data"
+                            value={trainingDataCount}
+                            prefix={<DatabaseOutlined />}
+                            valueStyle={{ color: "#722ed1" }}
+                          />
+                        </div>
+                      </Tooltip>
+                    )}
                   </Col>
                 </Row>
                 {stats.by_type && Object.keys(stats.by_type).length > 0 && (
@@ -343,6 +370,19 @@ const DetectionPage: React.FC = () => {
                   </div>
                 )}
               </Card>
+            )}
+
+            {/* Training data badge when no stats yet but count is available */}
+            {!stats && trainingDataCount !== null && trainingDataCount > 0 && (
+              <Tooltip title="Total training examples collected">
+                <Tag
+                  icon={<DatabaseOutlined />}
+                  color="purple"
+                  style={{ fontSize: 13, padding: "4px 10px" }}
+                >
+                  {trainingDataCount} training examples collected
+                </Tag>
+              </Tooltip>
             )}
 
             {/* Annotated Text */}

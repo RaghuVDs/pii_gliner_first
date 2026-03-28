@@ -65,6 +65,7 @@ class RetrainRequest(BaseModel):
         False,
         description="Force retrain even if training data hasn't changed",
     )
+    epochs: int | None = Field(None, ge=1, le=500, description="Number of epochs (auto if None)")
 
 
 class RetrainJobResponse(BaseModel):
@@ -160,16 +161,16 @@ async def get_active_model(
 
 
 # ---------------------------------------------------------------------------
-# POST /retrain -- trigger manual retrain
+# POST /retrain -- trigger manual retrain (inline, no Celery required)
 # ---------------------------------------------------------------------------
 @router.post(
     "/retrain",
-    status_code=status.HTTP_202_ACCEPTED,
+    status_code=status.HTTP_200_OK,
 
     responses={
         409: {"model": ErrorResponse, "description": "Retrain already in progress"},
     },
-    summary="Trigger model retraining",
+    summary="Trigger model retraining (inline)",
     dependencies=[Depends(require_role("admin"))],
 )
 async def trigger_retrain(
@@ -178,12 +179,12 @@ async def trigger_retrain(
     tenant: Tenant = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """Submit a model retraining job using the tenant's current
-    training data corpus."""
-    return await ml_model_service.trigger_retrain(db=db, 
+    """Run model retraining inline using the tenant's current
+    training data corpus from MongoDB. Does not require Celery."""
+    return await ml_model_service.inline_retrain(
+        db=db,
         tenant_id=tenant.id,
-        description=body.description,
-        force=body.force,
+        epochs=body.epochs,
         triggered_by=current_user.id,
     )
 

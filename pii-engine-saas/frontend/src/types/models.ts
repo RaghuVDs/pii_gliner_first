@@ -256,52 +256,73 @@ export interface PendingRule {
 }
 
 export interface TrainingExample {
-  id: string;
+  _id: string;
+  id?: string;
   tenant_id: string;
   structure: string;
-  label: string;
-  source: DetectionSource;
+  label?: string;
+  entity_type?: string;
+  source: DetectionSource | string;
   score: number;
-  metadata: Record<string, unknown>;
+  keywords?: string[];
+  co_labels?: string[];
+  length?: number;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
 // ---- Models ----
 
 export interface ModelVersion {
-  id: string;
+  id: string | number;
   tenant_id: string;
-  version: string;
+  version: string | number;
   is_active: boolean;
-  accuracy: number;
-  f1_score: number;
-  precision: number;
-  recall: number;
-  labels_count: number;
-  training_examples_count: number;
-  epochs: number;
-  model_path: string;
+  num_labels: number;
+  num_examples: number;
+  train_size?: number | null;
+  val_size?: number | null;
+  val_accuracy?: number | null;
+  val_weighted_f1?: number | null;
+  metrics_detail?: Record<string, unknown> | null;
+  model_bucket_path?: string;
+  vocab_bucket_path?: string;
+  training_trigger?: string;
   trained_at: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface ModelMetrics {
-  overall: {
+  overall?: {
     accuracy: number;
     f1_score: number;
     precision: number;
     recall: number;
   };
-  per_label: Record<
+  per_label?: Record<
     string,
     {
       precision: number;
       recall: number;
-      f1_score: number;
+      f1: number;
+      f1_score?: number;
       support: number;
     }
   >;
-  loss_history: number[];
+  loss_history?: number[];
+  metrics_detail?: Record<string, unknown>;
+  // Flat fields returned by the metrics endpoint
+  id?: number;
+  version?: number;
+  is_active?: boolean;
+  num_labels?: number;
+  num_examples?: number;
+  train_size?: number | null;
+  val_size?: number | null;
+  val_accuracy?: number | null;
+  val_weighted_f1?: number | null;
+  training_trigger?: string;
+  trained_at?: string;
 }
 
 // ---- API Management ----

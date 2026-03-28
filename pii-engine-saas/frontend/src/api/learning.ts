@@ -11,7 +11,8 @@ export interface PendingRuleStats {
 }
 
 export interface TrainingStats {
-  total: number;
+  total_examples: number;
+  total?: number;
   by_label: Record<string, number>;
   by_source: Record<string, number>;
 }
@@ -55,7 +56,7 @@ export const learningApi = {
     label?: string
   ): Promise<PaginatedResponse<TrainingExample>> {
     return get("/learning/training-data", {
-      params: { page, page_size: pageSize, label },
+      params: { page, page_size: pageSize, entity_type: label },
     });
   },
 

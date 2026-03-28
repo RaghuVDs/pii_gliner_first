@@ -14,41 +14,67 @@ import {
   Spin,
   Modal,
   Progress,
+  Divider,
+  Alert,
+  Descriptions,
 } from "antd";
 import {
   RobotOutlined,
   ThunderboltOutlined,
   CheckCircleOutlined,
   SyncOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { Line } from "@ant-design/charts";
-import { modelsApi } from "@/api/models";
+import { modelsApi, InlineRetrainResult } from "@/api/models";
 import { ModelVersion, ModelMetrics } from "@/types/models";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
+const AUTO_RETRAIN_KEY = "pii_auto_retrain_threshold";
+
 const ModelsPage: React.FC = () => {
   const [activeModel, setActiveModel] = useState<ModelVersion | null>(null);
   const [versions, setVersions] = useState<ModelVersion[]>([]);
-  const [metrics, setMetrics] = useState<ModelMetrics | null>(null);
+  const [metricsHistory, setMetricsHistory] = useState<ModelMetrics[]>([]);
   const [loading, setLoading] = useState(true);
-  const [retrainEpochs, setRetrainEpochs] = useState<number>(10);
+  const [retrainEpochs, setRetrainEpochs] = useState<number>(50);
   const [retraining, setRetraining] = useState(false);
-  const [retrainJobId, setRetrainJobId] = useState<string | null>(null);
-  const [retrainProgress, setRetrainProgress] = useState(0);
+  const [retrainResult, setRetrainResult] = useState<InlineRetrainResult | null>(null);
+
+  // Training Config
+  const [autoRetrainThreshold, setAutoRetrainThreshold] = useState<number>(() => {
+    const stored = localStorage.getItem(AUTO_RETRAIN_KEY);
+    return stored ? parseInt(stored, 10) : 100;
+  });
+
+  const saveAutoRetrain = (val: number) => {
+    setAutoRetrainThreshold(val);
+    localStorage.setItem(AUTO_RETRAIN_KEY, String(val));
+    message.success(`Auto-retrain threshold set to ${val} detections`);
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [activeData, versionsData, metricsData] = await Promise.all([
+      const results = await Promise.allSettled([
         modelsApi.getActiveModel(),
         modelsApi.listVersions(),
         modelsApi.getMetrics(),
       ]);
-      setActiveModel(activeData);
-      setVersions(versionsData);
-      setMetrics(metricsData);
+
+      if (results[0].status === "fulfilled") {
+        setActiveModel(results[0].value);
+      }
+      if (results[1].status === "fulfilled") {
+        setVersions(results[1].value);
+      }
+      if (results[2].status === "fulfilled") {
+        const metricsData = results[2].value;
+        // The metrics endpoint returns an array of metric entries
+        setMetricsHistory(Array.isArray(metricsData) ? metricsData : [metricsData]);
+      }
     } catch {
       message.error("Failed to load model data");
     } finally {
@@ -60,50 +86,37 @@ const ModelsPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  // Poll retrain status
-  useEffect(() => {
-    if (!retrainJobId) return;
-    const interval = setInterval(async () => {
-      try {
-        const status = await modelsApi.getRetrainStatus(retrainJobId);
-        setRetrainProgress(status.progress);
-        if (status.status === "completed") {
-          setRetraining(false);
-          setRetrainJobId(null);
-          message.success("Model retraining completed!");
-          fetchData();
-        } else if (status.status === "failed") {
-          setRetraining(false);
-          setRetrainJobId(null);
-          message.error(`Retraining failed: ${status.message}`);
-        }
-      } catch {
-        // continue polling
-      }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [retrainJobId, fetchData]);
-
   const handleRetrain = async () => {
     setRetraining(true);
+    setRetrainResult(null);
     try {
       const result = await modelsApi.triggerRetrain(retrainEpochs);
-      setRetrainJobId(result.job_id);
-      setRetrainProgress(0);
-      message.info("Model retraining started");
+      setRetrainResult(result);
+      if (result.status === "trained") {
+        message.success(
+          `Model trained successfully! Val F1: ${((result.val_weighted_f1 || 0) * 100).toFixed(1)}%`
+        );
+        fetchData();
+      } else if (result.status === "skipped") {
+        message.warning(result.reason || "Training skipped - not enough data");
+      } else {
+        message.info(`Training result: ${result.status}`);
+      }
     } catch {
-      setRetraining(false);
+      setRetrainResult(null);
       message.error("Failed to start retraining");
+    } finally {
+      setRetraining(false);
     }
   };
 
-  const handleActivate = async (versionId: string) => {
+  const handleActivate = async (versionId: string | number) => {
     Modal.confirm({
       title: "Activate Model Version",
       content: "This will replace the currently active model. Continue?",
       onOk: async () => {
         try {
-          await modelsApi.activateVersion(versionId);
+          await modelsApi.activateVersion(String(versionId));
           message.success("Model version activated");
           fetchData();
         } catch {
@@ -113,26 +126,49 @@ const ModelsPage: React.FC = () => {
     });
   };
 
+  // Build loss chart data from the latest metrics entry that has history
+  const latestWithMetrics = metricsHistory.find(
+    (m) => m.metrics_detail && (m.metrics_detail as Record<string, unknown>).history_sample
+  );
+  const historySample = latestWithMetrics?.metrics_detail?.history_sample as
+    | { val_loss?: number[]; train_loss?: number[] }
+    | undefined;
+
+  const lossChartData: { epoch: number; loss: number; type: string }[] = [];
+  if (historySample?.train_loss) {
+    historySample.train_loss.forEach((loss, i) => {
+      lossChartData.push({ epoch: i + 1, loss, type: "Train" });
+    });
+  }
+  if (historySample?.val_loss) {
+    historySample.val_loss.forEach((loss, i) => {
+      lossChartData.push({ epoch: i + 1, loss, type: "Validation" });
+    });
+  }
+
   const lossChartConfig = {
-    data: (metrics?.loss_history || []).map((loss, epoch) => ({
-      epoch: epoch + 1,
-      loss,
-    })),
+    data: lossChartData,
     xField: "epoch",
     yField: "loss",
+    seriesField: "type",
     smooth: true,
     height: 250,
-    color: "#ff4d4f",
+    color: ["#1677ff", "#ff4d4f"],
   };
+
+  // Build per-label metrics from latest active version or latest metrics
+  const latestPerLabel = latestWithMetrics?.metrics_detail?.val_per_label as
+    | Record<string, { precision: number; recall: number; f1: number; support: number }>
+    | undefined;
 
   const versionColumns = [
     {
       title: "Version",
       dataIndex: "version",
       key: "version",
-      render: (version: string, record: ModelVersion) => (
+      render: (version: string | number, record: ModelVersion) => (
         <Space>
-          <Text strong>{version}</Text>
+          <Text strong>v{version}</Text>
           {record.is_active && <Tag color="green">ACTIVE</Tag>}
         </Space>
       ),
@@ -141,13 +177,15 @@ const ModelsPage: React.FC = () => {
       title: "Accuracy",
       dataIndex: "val_accuracy",
       key: "accuracy",
-      render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
+      render: (v: number | null) =>
+        v != null ? `${(Number(v) * 100).toFixed(1)}%` : "-",
     },
     {
       title: "F1 Score",
       dataIndex: "val_weighted_f1",
       key: "f1_score",
-      render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
+      render: (v: number | null) =>
+        v != null ? `${(Number(v) * 100).toFixed(1)}%` : "-",
     },
     {
       title: "Labels",
@@ -160,15 +198,29 @@ const ModelsPage: React.FC = () => {
       key: "training_examples_count",
     },
     {
-      title: "Epochs",
-      dataIndex: "train_size",
-      key: "epochs",
+      title: "Train/Val Size",
+      key: "split",
+      render: (_: unknown, record: ModelVersion) =>
+        record.train_size && record.val_size
+          ? `${record.train_size} / ${record.val_size}`
+          : "-",
+    },
+    {
+      title: "Trigger",
+      dataIndex: "training_trigger",
+      key: "trigger",
+      render: (trigger: string) => (
+        <Tag color={trigger === "manual" ? "blue" : "orange"}>
+          {trigger || "auto"}
+        </Tag>
+      ),
     },
     {
       title: "Trained",
       dataIndex: "trained_at",
       key: "trained_at",
-      render: (date: string) => dayjs(date).format("MMM DD, YYYY HH:mm"),
+      render: (date: string) =>
+        date ? dayjs(date).format("MMM DD, YYYY HH:mm") : "-",
     },
     {
       title: "Actions",
@@ -206,7 +258,7 @@ const ModelsPage: React.FC = () => {
             <Space>
               <RobotOutlined />
               Active Model
-              <Tag color="green">{activeModel.version}</Tag>
+              <Tag color="green">v{activeModel.version}</Tag>
             </Space>
           }
           style={{ marginBottom: 24 }}
@@ -215,8 +267,12 @@ const ModelsPage: React.FC = () => {
             <Col span={6}>
               <Statistic
                 title="Accuracy"
-                value={((activeModel.val_accuracy || 0) * 100).toFixed(1)}
-                suffix="%"
+                value={
+                  activeModel.val_accuracy != null
+                    ? (Number(activeModel.val_accuracy) * 100).toFixed(1)
+                    : "N/A"
+                }
+                suffix={activeModel.val_accuracy != null ? "%" : ""}
                 prefix={<CheckCircleOutlined />}
                 valueStyle={{ color: "#3f8600" }}
               />
@@ -224,8 +280,12 @@ const ModelsPage: React.FC = () => {
             <Col span={6}>
               <Statistic
                 title="F1 Score"
-                value={((activeModel.val_weighted_f1 || 0) * 100).toFixed(1)}
-                suffix="%"
+                value={
+                  activeModel.val_weighted_f1 != null
+                    ? (Number(activeModel.val_weighted_f1) * 100).toFixed(1)
+                    : "N/A"
+                }
+                suffix={activeModel.val_weighted_f1 != null ? "%" : ""}
               />
             </Col>
             <Col span={6}>
@@ -237,46 +297,168 @@ const ModelsPage: React.FC = () => {
             <Col span={6}>
               <Statistic
                 title="Trained"
-                value={dayjs(activeModel.trained_at).format("MMM DD, YYYY")}
+                value={
+                  activeModel.trained_at
+                    ? dayjs(activeModel.trained_at).format("MMM DD, YYYY")
+                    : "N/A"
+                }
               />
             </Col>
           </Row>
         </Card>
       )}
 
-      {/* Retrain Controls */}
-      <Card style={{ marginBottom: 24 }}>
-        <Space align="center" size="large">
-          <Text strong>Retrain Model</Text>
-          <InputNumber
-            min={1}
-            max={100}
-            value={retrainEpochs}
-            onChange={(v) => setRetrainEpochs(v || 10)}
-            addonBefore="Epochs"
-          />
-          <Button
-            type="primary"
-            icon={retraining ? <SyncOutlined spin /> : <ThunderboltOutlined />}
-            onClick={handleRetrain}
-            loading={retraining}
-          >
-            {retraining ? "Retraining..." : "Start Retrain"}
-          </Button>
-          {retraining && (
+      {/* Training Config + Retrain Controls */}
+      <Card
+        title={
+          <Space>
+            <SettingOutlined />
+            Training Configuration
+          </Space>
+        }
+        style={{ marginBottom: 24 }}
+      >
+        <Row gutter={[24, 16]}>
+          {/* Auto-retrain config */}
+          <Col xs={24} md={12}>
+            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <Text strong>Auto-retrain Threshold</Text>
+              <Text type="secondary">
+                Automatically trigger retraining after collecting this many new detections.
+              </Text>
+              <Space>
+                <InputNumber
+                  min={10}
+                  max={10000}
+                  step={10}
+                  value={autoRetrainThreshold}
+                  onChange={(v) => v && setAutoRetrainThreshold(v)}
+                  addonAfter="detections"
+                  style={{ width: 200 }}
+                />
+                <Button
+                  onClick={() => saveAutoRetrain(autoRetrainThreshold)}
+                >
+                  Save
+                </Button>
+              </Space>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                Current threshold: {autoRetrainThreshold} detections (stored locally)
+              </Text>
+            </Space>
+          </Col>
+
+          <Col xs={0} md={0}>
+            <Divider type="vertical" style={{ height: "100%" }} />
+          </Col>
+
+          {/* Manual retrain */}
+          <Col xs={24} md={12}>
+            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <Text strong>Manual Training</Text>
+              <Text type="secondary">
+                Run training immediately using all collected training data.
+              </Text>
+              <Space align="center" size="middle">
+                <InputNumber
+                  min={1}
+                  max={500}
+                  value={retrainEpochs}
+                  onChange={(v) => setRetrainEpochs(v || 50)}
+                  addonBefore="Epochs"
+                  style={{ width: 160 }}
+                />
+                <Button
+                  type="primary"
+                  icon={retraining ? <SyncOutlined spin /> : <ThunderboltOutlined />}
+                  onClick={handleRetrain}
+                  loading={retraining}
+                >
+                  {retraining ? "Training..." : "Train Now"}
+                </Button>
+              </Space>
+            </Space>
+          </Col>
+        </Row>
+
+        {/* Training progress/result */}
+        {retraining && (
+          <div style={{ marginTop: 16 }}>
             <Progress
-              percent={Math.round(retrainProgress * 100)}
-              style={{ width: 200 }}
+              percent={99}
+              status="active"
+              strokeColor={{ from: "#108ee9", to: "#87d068" }}
             />
-          )}
-        </Space>
+            <Text type="secondary">
+              Training in progress... This may take a few minutes depending on data size.
+            </Text>
+          </div>
+        )}
+
+        {retrainResult && !retraining && (
+          <div style={{ marginTop: 16 }}>
+            {retrainResult.status === "trained" ? (
+              <Alert
+                type="success"
+                showIcon
+                message="Training Completed"
+                description={
+                  <Descriptions column={3} size="small" style={{ marginTop: 8 }}>
+                    <Descriptions.Item label="Examples">
+                      {retrainResult.num_examples}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Train/Val">
+                      {retrainResult.train_size} / {retrainResult.val_size}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Labels">
+                      {retrainResult.num_labels}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Val Accuracy">
+                      {retrainResult.val_accuracy != null
+                        ? `${(retrainResult.val_accuracy * 100).toFixed(1)}%`
+                        : "-"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Val F1">
+                      {retrainResult.val_weighted_f1 != null
+                        ? `${(retrainResult.val_weighted_f1 * 100).toFixed(1)}%`
+                        : "-"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Best Epoch">
+                      {retrainResult.best_epoch} / {retrainResult.stopped_epoch}
+                      {retrainResult.early_stopped && " (early stopped)"}
+                    </Descriptions.Item>
+                  </Descriptions>
+                }
+              />
+            ) : retrainResult.status === "skipped" ? (
+              <Alert
+                type="warning"
+                showIcon
+                message="Training Skipped"
+                description={retrainResult.reason}
+              />
+            ) : (
+              <Alert
+                type="info"
+                showIcon
+                message={`Training Status: ${retrainResult.status}`}
+              />
+            )}
+          </div>
+        )}
       </Card>
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         {/* Loss Curve */}
         <Col xs={24} lg={12}>
           <Card title="Training Loss" size="small">
-            <Line {...lossChartConfig} />
+            {lossChartData.length > 0 ? (
+              <Line {...lossChartConfig} />
+            ) : (
+              <div style={{ textAlign: "center", padding: 40, color: "#999" }}>
+                No training history available yet. Train a model to see loss curves.
+              </div>
+            )}
           </Card>
         </Col>
 
@@ -285,14 +467,12 @@ const ModelsPage: React.FC = () => {
           <Card title="Per-Label Metrics" size="small">
             <Table
               dataSource={
-                metrics?.per_label
-                  ? Object.entries(metrics?.metrics_detail?.val_per_label || metrics?.per_label).map(
-                      ([label, m]) => ({
-                        key: label,
-                        label,
-                        ...m,
-                      })
-                    )
+                latestPerLabel
+                  ? Object.entries(latestPerLabel).map(([label, m]) => ({
+                      key: label,
+                      label,
+                      ...m,
+                    }))
                   : []
               }
               columns={[
@@ -316,8 +496,8 @@ const ModelsPage: React.FC = () => {
                 },
                 {
                   title: "F1",
-                  dataIndex: "val_weighted_f1",
-                  key: "f1_score",
+                  dataIndex: "f1",
+                  key: "f1",
                   render: (v: number) => `${((v || 0) * 100).toFixed(1)}%`,
                 },
                 {
@@ -329,6 +509,9 @@ const ModelsPage: React.FC = () => {
               size="small"
               pagination={false}
               scroll={{ y: 200 }}
+              locale={{
+                emptyText: "Train a model to see per-label metrics.",
+              }}
             />
           </Card>
         </Col>
@@ -342,6 +525,9 @@ const ModelsPage: React.FC = () => {
           rowKey="id"
           size="small"
           pagination={{ pageSize: 10 }}
+          locale={{
+            emptyText: "No model versions yet. Train your first model above.",
+          }}
         />
       </Card>
     </div>

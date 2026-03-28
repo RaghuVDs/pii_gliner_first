@@ -38,7 +38,13 @@ const TrainingDataPage: React.FC = () => {
         learningApi.listTrainingData(page, pageSize, filterLabel),
         learningApi.getTrainingStats(),
       ]);
-      setData(examplesData.items);
+      // Normalize _id -> id for items returned from MongoDB
+      const normalized = (examplesData.items || []).map((item) => ({
+        ...item,
+        id: item._id || item.id || "",
+        label: item.label || item.entity_type || "UNKNOWN",
+      }));
+      setData(normalized);
       setTotal(examplesData.total);
       setStats(statsData);
     } catch {
@@ -52,9 +58,10 @@ const TrainingDataPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (record: TrainingExample) => {
+    const docId = record._id || record.id || "";
     try {
-      await learningApi.deleteTrainingExample(id);
+      await learningApi.deleteTrainingExample(docId);
       message.success("Training example deleted");
       fetchData();
     } catch {
@@ -99,7 +106,18 @@ const TrainingDataPage: React.FC = () => {
       title: "Source",
       dataIndex: "source",
       key: "source",
-      render: (source: DetectionSource) => <SourceBadge source={source} />,
+      render: (source: DetectionSource | string) => {
+        const enumVal = Object.values(DetectionSource).includes(
+          source as DetectionSource
+        )
+          ? (source as DetectionSource)
+          : undefined;
+        return enumVal ? (
+          <SourceBadge source={enumVal} />
+        ) : (
+          <Tag color="default">{String(source)}</Tag>
+        );
+      },
     },
     {
       title: "Score",
@@ -124,7 +142,7 @@ const TrainingDataPage: React.FC = () => {
       render: (_: unknown, record: TrainingExample) => (
         <Popconfirm
           title="Delete this example?"
-          onConfirm={() => handleDelete(record.id)}
+          onConfirm={() => handleDelete(record)}
         >
           <Button
             type="text"
@@ -173,7 +191,7 @@ const TrainingDataPage: React.FC = () => {
           <Card title="Summary" size="small">
             <Space direction="vertical" size="middle">
               <div>
-                <strong>Total Examples:</strong> {stats?.total || 0}
+                <strong>Total Examples:</strong> {stats?.total_examples ?? stats?.total ?? 0}
               </div>
               <div>
                 <strong>Unique Labels:</strong>{" "}
@@ -202,7 +220,8 @@ const TrainingDataPage: React.FC = () => {
         <Table
           columns={columns}
           dataSource={data}
-          rowKey="id"
+          rowKey={(record) => record._id || record.id || ""}
+
           loading={loading}
           size="small"
           pagination={paginationProps}
