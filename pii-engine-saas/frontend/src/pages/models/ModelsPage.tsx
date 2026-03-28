@@ -285,7 +285,7 @@ const ModelsPage: React.FC = () => {
           <Card title="Per-Label Metrics" size="small">
             <Table
               dataSource={
-                metrics
+                metrics?.per_label
                   ? Object.entries(metrics.per_label).map(
                       ([label, m]) => ({
                         key: label,

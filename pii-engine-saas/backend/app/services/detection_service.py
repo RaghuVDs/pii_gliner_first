@@ -491,9 +491,10 @@ class DetectionService:
                     "Auto-retrain threshold reached (%d examples) for tenant %s",
                     total, tenant_id,
                 )
-                # TODO: Trigger Celery retrain task here
-                # from app.tasks.training_tasks import retrain_model
-                # retrain_model.delay(str(tenant_id), epochs=50, triggered_by="auto")
+                # Trigger inline retrain (runs in thread pool to not block)
+                asyncio.create_task(
+                    self._auto_retrain(str(tenant_id), total)
+                )
 
         except Exception:
             logger.warning(
@@ -501,6 +502,117 @@ class DetectionService:
                 tenant_id,
                 exc_info=True,
             )
+
+    async def _auto_retrain(self, tenant_id: str, num_examples: int) -> None:
+        """Auto-retrain LSTM model when enough training data accumulates."""
+        try:
+            import os
+            import yaml
+            from datetime import datetime, timezone
+
+            logger.info("[AUTO-RETRAIN] Starting for tenant %s with %d examples...", tenant_id, num_examples)
+
+            # Fetch training examples from MongoDB
+            examples = []
+            async for doc in self._mongo["training_examples"].find({"tenant_id": tenant_id}):
+                examples.append({
+                    "structure": doc["structure"],
+                    "label": doc["label"],
+                    "length": doc["length"],
+                    "keywords": doc["keywords"],
+                    "co_labels": doc["co_labels"],
+                    "source": doc["source"],
+                    "score": doc["score"],
+                    "confidence_type": doc.get("confidence_type", "supervised"),
+                })
+
+            if len(examples) < 30:
+                return
+
+            # Write to temp file for trainer
+            train_dir = os.path.join("data", "ml_training")
+            os.makedirs(train_dir, exist_ok=True)
+            training_path = os.path.join(train_dir, f"training_data_{tenant_id[:8]}.yaml")
+            model_path = os.path.join(train_dir, f"model_{tenant_id[:8]}.pt")
+            vocab_path = os.path.join(train_dir, f"vocab_{tenant_id[:8]}.yaml")
+
+            with open(training_path, "w") as f:
+                yaml.dump({"examples": examples}, f, default_flow_style=False)
+
+            # Train in thread pool
+            loop = asyncio.get_running_loop()
+
+            def _train():
+                from app.engine.ml.trainer import SelfTrainer
+                trainer = SelfTrainer(
+                    training_data_path=training_path,
+                    model_path=model_path,
+                    vocab_path=vocab_path,
+                )
+                return trainer.retrain(epochs=80)
+
+            result = await loop.run_in_executor(None, _train)
+
+            if result.get("status") == "trained":
+                logger.info(
+                    "[AUTO-RETRAIN] Success for tenant %s: %d examples, %d labels, "
+                    "val_acc=%.3f, val_f1=%.3f",
+                    tenant_id, result.get("num_examples", 0),
+                    result.get("num_labels", 0),
+                    result.get("val_accuracy", 0),
+                    result.get("val_weighted_f1", 0),
+                )
+
+                # Save model version to PostgreSQL
+                try:
+                    from app.core.database import _async_session_factory
+                    from app.models.ml_model_version import MLModelVersion
+                    from sqlalchemy import select, func
+
+                    if _async_session_factory:
+                        async with _async_session_factory() as db:
+                            # Get next version number
+                            max_ver = await db.execute(
+                                select(func.max(MLModelVersion.version)).where(
+                                    MLModelVersion.tenant_id == uuid.UUID(tenant_id)
+                                )
+                            )
+                            next_ver = (max_ver.scalar() or 0) + 1
+
+                            # Deactivate old versions
+                            from sqlalchemy import update
+                            await db.execute(
+                                update(MLModelVersion)
+                                .where(MLModelVersion.tenant_id == uuid.UUID(tenant_id))
+                                .values(is_active=False)
+                            )
+
+                            version = MLModelVersion(
+                                tenant_id=uuid.UUID(tenant_id),
+                                version=next_ver,
+                                model_bucket_path=model_path,
+                                vocab_bucket_path=vocab_path,
+                                num_labels=result.get("num_labels", 0),
+                                num_examples=result.get("num_examples", 0),
+                                train_size=result.get("train_size", 0),
+                                val_size=result.get("val_size", 0),
+                                val_accuracy=result.get("val_accuracy"),
+                                val_weighted_f1=result.get("val_weighted_f1"),
+                                metrics_detail=result,
+                                is_active=True,
+                                training_trigger="auto",
+                                trained_at=datetime.now(timezone.utc),
+                            )
+                            db.add(version)
+                            await db.commit()
+                            logger.info("[AUTO-RETRAIN] Model v%d saved for tenant %s", next_ver, tenant_id)
+                except Exception:
+                    logger.warning("[AUTO-RETRAIN] Failed to save model version to DB", exc_info=True)
+            else:
+                logger.warning("[AUTO-RETRAIN] Training did not complete: %s", result.get("status"))
+
+        except Exception:
+            logger.warning("[AUTO-RETRAIN] Failed for tenant %s", tenant_id, exc_info=True)
 
     @staticmethod
     def _compute_stats(detections: list[dict]) -> dict[str, Any]:
