@@ -233,34 +233,6 @@ examples:
   - EMPLOYEE_ID
   - LICENSE_PLATE_NUMBER
   - MEDICAL_RECORD_NUMBER
-  - PERSON_LAST_NAME
-  - PERSON_MIDDLE_NAME
-  - PRESCRIPTION_NUMBER
-  confidence_type: supervised
-  keywords:
-  - channel
-  - phone
-  - agent
-  - this
-  - david
-  - ramirez
-  - badge
-  - number
-  - ufi
-  - customer
-  - name
-  - priya
-  label: PERSON_FIRST_NAME
-  length: 5
-  score: 0.96
-  source: derived
-  structure: Aaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DRIVERS_LICENSE_NUMBER
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
   - PERSON_FIRST_NAME
   - PERSON_LAST_NAME
   - PRESCRIPTION_NUMBER
@@ -339,34 +311,6 @@ examples:
   score: 0.5274
   source: gliner
   structure: Aaaaaaaa N, NNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DRIVERS_LICENSE_NUMBER
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  confidence_type: supervised
-  keywords:
-  - anand
-  - chakraborty
-  - auto
-  - policy
-  - ufi
-  - auto
-  - date
-  - birth
-  - november
-  - ssn
-  - customer
-  - other
-  label: SSN
-  length: 11
-  score: 0.98
-  source: regex
-  structure: NNN-NN-NNNN
 - co_labels:
   - DATE_OF_BIRTH
   - EMPLOYEE_ID
@@ -479,34 +423,6 @@ examples:
   score: 0.98
   source: regex
   structure: AAAAAANANAANNNNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - DRIVERS_LICENSE_NUMBER
-  - EMPLOYEE_ID
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  confidence_type: semi_supervised
-  keywords:
-  - his
-  - plate
-  - fgr
-  - vin
-  - customer
-  - car
-  - vin
-  - plate
-  - nlv
-  - account
-  - afs
-  - customer
-  label: LICENSE_PLATE_NUMBER
-  length: 8
-  score: 0.5644
-  source: gliner
-  structure: AAA-NNNN
 - co_labels:
   - DATE_OF_BIRTH
   - DEVICE_APP_DATA
@@ -710,34 +626,6 @@ examples:
   - EMAIL_ADDRESS
   - EMPLOYEE_ID
   - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  confidence_type: supervised
-  keywords:
-  - leonard
-  - npi
-  - prescription
-  - customer
-  - amanda
-  - foster
-  - npi
-  - patient
-  - dsr
-  - customer
-  - rajesh
-  - gupta
-  label: PROFESSIONAL_LICENSE_NUMBER
-  length: 10
-  score: 0.98
-  source: regex
-  structure: NNNNNNNNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - DRIVERS_LICENSE_NUMBER
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
   - MEDICARE_MEDICAID_ID
   - PERSON_FIRST_NAME
   confidence_type: supervised
@@ -759,90 +647,6 @@ examples:
   score: 0.8123
   source: gliner
   structure: AAA-A-NNNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - DRIVERS_LICENSE_NUMBER
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  confidence_type: supervised
-  keywords:
-  - tion
-  - customer
-  - amanda
-  - foster
-  - npi
-  - patient
-  - dsr
-  - customer
-  - rajesh
-  - gupta
-  - npi
-  - patient
-  label: PERSON_FIRST_NAME
-  length: 6
-  score: 0.96
-  source: derived
-  structure: Aaaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - DRIVERS_LICENSE_NUMBER
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  confidence_type: supervised
-  keywords:
-  - customer
-  - amanda
-  - foster
-  - npi
-  - patient
-  - dsr
-  - customer
-  - rajesh
-  - gupta
-  - npi
-  - patient
-  - medicare
-  label: PERSON_LAST_NAME
-  length: 5
-  score: 0.96
-  source: derived
-  structure: Aaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - DRIVERS_LICENSE_NUMBER
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  confidence_type: supervised
-  keywords:
-  - ustomer
-  - amanda
-  - foster
-  - npi
-  - patient
-  - dsr
-  - customer
-  - rajesh
-  - gupta
-  - npi
-  - patient
-  - medicare
-  label: PROFESSIONAL_LICENSE_NUMBER
-  length: 10
-  score: 0.98
-  source: regex
-  structure: NNNNNNNNNN
 - co_labels:
   - DATE_OF_BIRTH
   - DEVICE_APP_DATA
@@ -904,62 +708,6 @@ examples:
   - DEVICE_APP_DATA
   - DRIVERS_LICENSE_NUMBER
   - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  confidence_type: semi_supervised
-  keywords:
-  - patient
-  - medicare
-  - customer
-  - police
-  - report
-  - officer
-  - kevin
-  - doyle
-  - badge
-  - ppd
-  - customer
-  - witnesses
-  label: PERSON_FIRST_NAME
-  length: 5
-  score: 0.4732
-  source: gliner
-  structure: Aaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - DRIVERS_LICENSE_NUMBER
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  confidence_type: semi_supervised
-  keywords:
-  - medicare
-  - customer
-  - police
-  - report
-  - officer
-  - kevin
-  - doyle
-  - badge
-  - ppd
-  - customer
-  - witnesses
-  - maria
-  label: PERSON_LAST_NAME
-  length: 5
-  score: 0.4897
-  source: gliner
-  structure: Aaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - DRIVERS_LICENSE_NUMBER
-  - EMAIL_ADDRESS
   - LICENSE_PLATE_NUMBER
   - MEDICAL_RECORD_NUMBER
   - MEDICARE_MEDICAID_ID
@@ -983,62 +731,6 @@ examples:
   score: 0.8259
   source: gliner
   structure: AAA-NNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  confidence_type: supervised
-  keywords:
-  - olice
-  - report
-  - officer
-  - kevin
-  - doyle
-  - badge
-  - ppd
-  - customer
-  - witnesses
-  - maria
-  - santos
-  - james
-  label: PHONE_NUMBER
-  length: 12
-  score: 0.98
-  source: regex
-  structure: NNN-NNN-NNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - LICENSE_PLATE_NUMBER
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  confidence_type: supervised
-  keywords:
-  - officer
-  - kevin
-  - doyle
-  - badge
-  - ppd
-  - customer
-  - witnesses
-  - maria
-  - santos
-  - james
-  - liu
-  - customer
-  label: PHONE_NUMBER
-  length: 12
-  score: 0.98
-  source: regex
-  structure: NNN-NNN-NNNN
 - co_labels:
   - DATE_OF_BIRTH
   - EMAIL_ADDRESS
@@ -1067,118 +759,6 @@ examples:
   score: 0.7727
   source: gliner
   structure: AA-AN-NNNNNNNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_LAST_NAME
-  - PHONE_NUMBER
-  confidence_type: supervised
-  keywords:
-  - customer
-  - device
-  - serial
-  - express
-  - scripts
-  - esi
-  - customer
-  - husband
-  - arjun
-  - chakraborty
-  - phone
-  - ssn
-  label: PERSON_FIRST_NAME
-  length: 5
-  score: 0.96
-  source: derived
-  structure: Aaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  - PHONE_NUMBER
-  confidence_type: supervised
-  keywords:
-  - customer
-  - device
-  - serial
-  - express
-  - scripts
-  - esi
-  - customer
-  - husband
-  - arjun
-  - chakraborty
-  - phone
-  - ssn
-  label: PERSON_LAST_NAME
-  length: 11
-  score: 0.96
-  source: derived
-  structure: Aaaaaaaaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  confidence_type: supervised
-  keywords:
-  - serial
-  - express
-  - scripts
-  - esi
-  - customer
-  - husband
-  - arjun
-  - chakraborty
-  - phone
-  - ssn
-  - dob
-  - june
-  label: PHONE_NUMBER
-  length: 12
-  score: 0.98
-  source: regex
-  structure: NNN-NNN-NNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  confidence_type: supervised
-  keywords:
-  - express
-  - scripts
-  - esi
-  - customer
-  - husband
-  - arjun
-  - chakraborty
-  - phone
-  - ssn
-  - dob
-  - june
-  - customer
-  label: SSN
-  length: 11
-  score: 0.98
-  source: regex
-  structure: NNN-NN-NNNN
 - co_labels:
   - DEVICE_APP_DATA
   - EMAIL_ADDRESS
@@ -1294,34 +874,6 @@ examples:
 - co_labels:
   - DATE_OF_BIRTH
   - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  - PHONE_NUMBER
-  confidence_type: supervised
-  keywords:
-  - tomer
-  - email
-  - pchakraborty
-  - genedyne
-  - biotech
-  - com
-  - employee
-  - gbt
-  - customer
-  - attorney
-  - patricia
-  - huang
-  label: PERSON_LAST_NAME
-  length: 5
-  score: 0.96
-  source: derived
-  structure: Aaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
   - EMPLOYEE_ID
   - MEDICAL_RECORD_NUMBER
   - MEDICARE_MEDICAID_ID
@@ -1352,34 +904,6 @@ examples:
   - DEVICE_APP_DATA
   - EMAIL_ADDRESS
   - EMPLOYEE_ID
-  - MEDICAL_RECORD_NUMBER
-  - MEDICARE_MEDICAID_ID
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  confidence_type: supervised
-  keywords:
-  - com
-  - employee
-  - gbt
-  - customer
-  - attorney
-  - patricia
-  - huang
-  - phuang
-  - desertlawgroup
-  - com
-  - phone
-  - bar
-  label: PHONE_NUMBER
-  length: 12
-  score: 0.98
-  source: regex
-  structure: NNN-NNN-NNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - DEVICE_APP_DATA
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
   - MEDICARE_MEDICAID_ID
   - PERSON_FIRST_NAME
   - PERSON_LAST_NAME
@@ -1401,89 +925,6 @@ examples:
   score: 0.9747
   source: gliner
   structure: AA-NNNNNN
-- co_labels:
-  - CARD_EXPIRATION_DATE
-  - DATE_OF_BIRTH
-  - EMERGENCY_CONTACT_INFORMATION
-  - INSURANCE_POLICY
-  - MEDICAL_RECORD_NUMBER
-  - PERSON_LAST_NAME
-  - PRESCRIPTION_NUMBER
-  - PROFESSIONAL_LICENSE_NUMBER
-  confidence_type: semi_supervised
-  keywords:
-  - patient
-  - sarah
-  - johnson
-  - mrn
-  - mrn
-  - dob
-  - ssn
-  - insurance
-  - blue
-  - cross
-  - policy
-  label: PERSON_FIRST_NAME
-  length: 5
-  score: 0.7661
-  source: gliner
-  structure: Aaaaa
-- co_labels:
-  - CARD_EXPIRATION_DATE
-  - DATE_OF_BIRTH
-  - EMERGENCY_CONTACT_INFORMATION
-  - INSURANCE_POLICY
-  - MEDICAL_RECORD_NUMBER
-  - PERSON_FIRST_NAME
-  - PRESCRIPTION_NUMBER
-  - PROFESSIONAL_LICENSE_NUMBER
-  confidence_type: semi_supervised
-  keywords:
-  - patient
-  - sarah
-  - johnson
-  - mrn
-  - mrn
-  - dob
-  - ssn
-  - insurance
-  - blue
-  - cross
-  - policy
-  - gro
-  label: PERSON_LAST_NAME
-  length: 7
-  score: 0.5359
-  source: gliner
-  structure: Aaaaaaa
-- co_labels:
-  - CARD_EXPIRATION_DATE
-  - DATE_OF_BIRTH
-  - EMERGENCY_CONTACT_INFORMATION
-  - INSURANCE_POLICY
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  - PRESCRIPTION_NUMBER
-  - PROFESSIONAL_LICENSE_NUMBER
-  confidence_type: supervised
-  keywords:
-  - patient
-  - sarah
-  - johnson
-  - mrn
-  - mrn
-  - dob
-  - ssn
-  - insurance
-  - blue
-  - cross
-  - policy
-  - group
-  label: MEDICAL_RECORD_NUMBER
-  length: 12
-  score: 0.99
-  source: gliner
-  structure: AAA-NNNNNNNN
 - co_labels:
   - CARD_EXPIRATION_DATE
   - EMERGENCY_CONTACT_INFORMATION
@@ -1519,62 +960,6 @@ examples:
   - INSURANCE_POLICY
   - MEDICAL_RECORD_NUMBER
   - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  - PRESCRIPTION_NUMBER
-  confidence_type: supervised
-  keywords:
-  - patient
-  - sarah
-  - johnson
-  - mrn
-  - mrn
-  - dob
-  - ssn
-  - insurance
-  - blue
-  - cross
-  - policy
-  - group
-  label: SSN
-  length: 11
-  score: 0.98
-  source: regex
-  structure: NNN-NN-NNNN
-- co_labels:
-  - CARD_EXPIRATION_DATE
-  - DATE_OF_BIRTH
-  - EMERGENCY_CONTACT_INFORMATION
-  - INSURANCE_POLICY
-  - MEDICAL_RECORD_NUMBER
-  - PERSON_LAST_NAME
-  - PRESCRIPTION_NUMBER
-  - PROFESSIONAL_LICENSE_NUMBER
-  confidence_type: supervised
-  keywords:
-  - ssn
-  - insurance
-  - blue
-  - cross
-  - policy
-  - group
-  - grp
-  - tech
-  - physician
-  - michael
-  - chen
-  - npi
-  label: PERSON_FIRST_NAME
-  length: 7
-  score: 0.96
-  source: derived
-  structure: Aaaaaaa
-- co_labels:
-  - CARD_EXPIRATION_DATE
-  - DATE_OF_BIRTH
-  - EMERGENCY_CONTACT_INFORMATION
-  - INSURANCE_POLICY
-  - MEDICAL_RECORD_NUMBER
-  - PERSON_FIRST_NAME
   - PRESCRIPTION_NUMBER
   - PROFESSIONAL_LICENSE_NUMBER
   confidence_type: supervised
@@ -1596,34 +981,6 @@ examples:
   score: 0.96
   source: derived
   structure: Aaaa
-- co_labels:
-  - CARD_EXPIRATION_DATE
-  - DATE_OF_BIRTH
-  - EMERGENCY_CONTACT_INFORMATION
-  - INSURANCE_POLICY
-  - MEDICAL_RECORD_NUMBER
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  - PRESCRIPTION_NUMBER
-  confidence_type: supervised
-  keywords:
-  - insurance
-  - blue
-  - cross
-  - policy
-  - group
-  - grp
-  - tech
-  - physician
-  - michael
-  - chen
-  - npi
-  - prescription
-  label: PROFESSIONAL_LICENSE_NUMBER
-  length: 10
-  score: 0.98
-  source: regex
-  structure: NNNNNNNNNN
 - co_labels:
   - CARD_EXPIRATION_DATE
   - DATE_OF_BIRTH
@@ -1767,33 +1124,6 @@ examples:
 - co_labels:
   - DATE_OF_BIRTH
   - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_LAST_NAME
-  - PHONE_NUMBER
-  - SSN
-  confidence_type: semi_supervised
-  keywords:
-  - employee
-  - record
-  - james
-  - wilson
-  - eid
-  - emp
-  - ssn
-  - dob
-  - department
-  - engineering
-  - manager
-  - lisa
-  label: PERSON_FIRST_NAME
-  length: 5
-  score: 0.5871
-  source: gliner
-  structure: Aaaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - EMAIL_ADDRESS
   - INCOME
   - PERSON_FIRST_NAME
   - PERSON_LAST_NAME
@@ -1818,114 +1148,6 @@ examples:
   score: 0.801
   source: gliner
   structure: AAA-NNNNNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  - PHONE_NUMBER
-  confidence_type: supervised
-  keywords:
-  - employee
-  - record
-  - james
-  - wilson
-  - eid
-  - emp
-  - ssn
-  - dob
-  - department
-  - engineering
-  - manager
-  - lisa
-  label: SSN
-  length: 11
-  score: 0.98
-  source: regex
-  structure: NNN-NN-NNNN
-- co_labels:
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  - PHONE_NUMBER
-  - SSN
-  confidence_type: supervised
-  keywords:
-  - employee
-  - record
-  - james
-  - wilson
-  - eid
-  - emp
-  - ssn
-  - dob
-  - department
-  - engineering
-  - manager
-  - lisa
-  label: DATE_OF_BIRTH
-  length: 10
-  score: 0.8023
-  source: gliner
-  structure: NN/NN/NNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_LAST_NAME
-  - PHONE_NUMBER
-  - SSN
-  confidence_type: semi_supervised
-  keywords:
-  - james
-  - wilson
-  - eid
-  - emp
-  - ssn
-  - dob
-  - department
-  - engineering
-  - manager
-  - lisa
-  - park
-  - salary
-  label: PERSON_FIRST_NAME
-  length: 4
-  score: 0.5692
-  source: gliner
-  structure: Aaaa
-- co_labels:
-  - DATE_OF_BIRTH
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_FIRST_NAME
-  - PHONE_NUMBER
-  - SSN
-  confidence_type: semi_supervised
-  keywords:
-  - wilson
-  - eid
-  - emp
-  - ssn
-  - dob
-  - department
-  - engineering
-  - manager
-  - lisa
-  - park
-  - salary
-  - year
-  label: PERSON_LAST_NAME
-  length: 4
-  score: 0.443
-  source: gliner
-  structure: Aaaa
 - co_labels:
   - DATE_OF_BIRTH
   - EMAIL_ADDRESS
@@ -1955,33 +1177,6 @@ examples:
   structure: '$NNN,NNN/aaaa, Aaaa: Aaaaa, Aaaaaaa: NNNNNNNNNN'
 - co_labels:
   - DATE_OF_BIRTH
-  - EMAIL_ADDRESS
-  - INCOME
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  - PHONE_NUMBER
-  - SSN
-  confidence_type: semi_supervised
-  keywords:
-  - park
-  - salary
-  - year
-  - bank
-  - chase
-  - account
-  - office
-  - building
-  - room
-  - badge
-  - sec
-  - email
-  label: EMPLOYEE_ID
-  length: 9
-  score: 0.5474
-  source: gliner
-  structure: AAA-NNNNN
-- co_labels:
-  - DATE_OF_BIRTH
   - EMPLOYEE_ID
   - INCOME
   - PERSON_FIRST_NAME
@@ -2008,82 +1203,947 @@ examples:
   source: regex
   structure: aaaaaaa@aaaaaaaa.aaa
 - co_labels:
-  - DATE_OF_BIRTH
   - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
-  - SSN
-  confidence_type: supervised
-  keywords:
-  - ount
-  - office
-  - building
-  - room
-  - badge
-  - sec
-  - email
-  - jwilson
-  - acmecorp
-  - com
-  - phone
-  - emergency
-  label: PHONE_NUMBER
-  length: 12
-  score: 0.99
-  source: field_label
-  structure: NNN-NNN-NNNN
-- co_labels:
-  - DATE_OF_BIRTH
-  - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_LAST_NAME
   - PHONE_NUMBER
   - SSN
-  confidence_type: semi_supervised
+  - STREET_ADDRESS
+  confidence_type: supervised
   keywords:
-  - building
-  - room
-  - badge
-  - sec
+  - customer
+  - jane
+  - williams
+  - ssn
+  - dob
+  - march
   - email
-  - jwilson
-  - acmecorp
+  - jwilliams
+  - corp
   - com
   - phone
-  - emergency
-  - mary
-  - wilson
-  label: PERSON_FIRST_NAME
-  length: 4
-  score: 0.6332
+  - address
+  label: DATE_OF_BIRTH
+  length: 14
+  score: 0.9197
   source: gliner
-  structure: Aaaa
+  structure: Aaaaa NN, NNNN
+- co_labels:
+  - DATE_OF_BIRTH
+  - PHONE_NUMBER
+  - SSN
+  - STREET_ADDRESS
+  confidence_type: supervised
+  keywords:
+  - customer
+  - jane
+  - williams
+  - ssn
+  - dob
+  - march
+  - email
+  - jwilliams
+  - corp
+  - com
+  - phone
+  - address
+  label: EMAIL_ADDRESS
+  length: 18
+  score: 0.98
+  source: regex
+  structure: aaaaaaaaa@aaaa.aaa
 - co_labels:
   - DATE_OF_BIRTH
   - EMAIL_ADDRESS
-  - EMPLOYEE_ID
-  - INCOME
-  - PERSON_FIRST_NAME
-  - PERSON_LAST_NAME
+  - PHONE_NUMBER
   - SSN
   confidence_type: supervised
   keywords:
-  - room
-  - badge
-  - sec
+  - lliams
+  - ssn
+  - dob
+  - march
   - email
-  - jwilson
-  - acmecorp
+  - jwilliams
+  - corp
   - com
   - phone
-  - emergency
-  - mary
-  - wilson
-  label: PHONE_NUMBER
+  - address
+  - evergreen
+  - terrace
+  label: STREET_ADDRESS
+  length: 78
+  score: 0.99
+  source: field_label
+  structure: NNN Aaaaaaaaa Aaaaaaa, Aaaaaaaaaaa AA NNNNN. Aaaaaa aaaaaaa AA-ANNN-NNNN-NNNN.
+- co_labels:
+  - HEALTH_PLAN_BENEFICIARY_NUMBER
+  - MEDICAL_RECORD_NUMBER
+  - MEDICARE_MEDICAID_ID
+  - PERSON_FIRST_NAME
+  - PRESCRIPTION_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: semi_supervised
+  keywords:
+  - patient
+  - michael
+  - brien
+  - mrn
+  - mrn
+  - insurance
+  - aetna
+  - policy
+  - aet
+  - susan
+  - park
+  - npi
+  label: PERSON_LAST_NAME
+  length: 7
+  score: 0.5761
+  source: gliner
+  structure: A Aaaaa
+- co_labels:
+  - HEALTH_PLAN_BENEFICIARY_NUMBER
+  - MEDICARE_MEDICAID_ID
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PRESCRIPTION_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - patient
+  - michael
+  - brien
+  - mrn
+  - mrn
+  - insurance
+  - aetna
+  - policy
+  - aet
+  - susan
+  - park
+  - npi
+  label: MEDICAL_RECORD_NUMBER
+  length: 11
+  score: 0.99
+  source: gliner
+  structure: AAA-NNNNNNN
+- co_labels:
+  - MEDICAL_RECORD_NUMBER
+  - MEDICARE_MEDICAID_ID
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PRESCRIPTION_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: semi_supervised
+  keywords:
+  - patient
+  - michael
+  - brien
+  - mrn
+  - mrn
+  - insurance
+  - aetna
+  - policy
+  - aet
+  - susan
+  - park
+  - npi
+  label: HEALTH_PLAN_BENEFICIARY_NUMBER
+  length: 11
+  score: 0.4816
+  source: gliner
+  structure: AAA-NNNNNNN
+- co_labels:
+  - HEALTH_PLAN_BENEFICIARY_NUMBER
+  - MEDICAL_RECORD_NUMBER
+  - MEDICARE_MEDICAID_ID
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - mrn
+  - mrn
+  - insurance
+  - aetna
+  - policy
+  - aet
+  - susan
+  - park
+  - npi
+  - prescription
+  - atorvastatin
+  - medicare
+  label: PRESCRIPTION_NUMBER
   length: 12
   score: 0.98
   source: regex
-  structure: NNN-NNN-NNNN
+  structure: Aaaaaaaaaaaa
+- co_labels:
+  - DATE_OF_BIRTH
+  - EMAIL_ADDRESS
+  - PAYROLL_NUMBER
+  - PERSON_FIRST_NAME
+  - PHONE_NUMBER
+  - ROUTING_NUMBER
+  - SSN
+  confidence_type: semi_supervised
+  keywords:
+  - employee
+  - record
+  - carlos
+  - rodriguez
+  - eid
+  - emp
+  - dept
+  - finance
+  - ssn
+  - dob
+  - salary
+  - bank
+  label: PERSON_LAST_NAME
+  length: 9
+  score: 0.6385
+  source: gliner
+  structure: Aaaaaaaaa
+- co_labels:
+  - DATE_OF_BIRTH
+  - EMAIL_ADDRESS
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - ROUTING_NUMBER
+  - SSN
+  confidence_type: supervised
+  keywords:
+  - employee
+  - record
+  - carlos
+  - rodriguez
+  - eid
+  - emp
+  - dept
+  - finance
+  - ssn
+  - dob
+  - salary
+  - bank
+  label: PAYROLL_NUMBER
+  length: 11
+  score: 0.9039
+  source: gliner
+  structure: AAA-NNNNNNN
+- co_labels:
+  - DATE_OF_BIRTH
+  - EMAIL_ADDRESS
+  - PAYROLL_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - SSN
+  confidence_type: supervised
+  keywords:
+  - emp
+  - dept
+  - finance
+  - ssn
+  - dob
+  - salary
+  - bank
+  - wells
+  - fargo
+  - routing
+  - account
+  - email
+  label: ROUTING_NUMBER
+  length: 9
+  score: 0.98
+  source: regex
+  structure: NNNNNNNNN
+- co_labels:
+  - DATE_OF_BIRTH
+  - EMAIL_ADDRESS
+  - PAYROLL_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - ROUTING_NUMBER
+  - SSN
+  confidence_type: supervised
+  keywords:
+  - finance
+  - ssn
+  - dob
+  - salary
+  - bank
+  - wells
+  - fargo
+  - routing
+  - account
+  - email
+  - crodriguez
+  - fintech
+  label: PHONE_NUMBER
+  length: 10
+  score: 0.98
+  source: regex
+  structure: NNNNNNNNNN
+- co_labels:
+  - DATE_OF_BIRTH
+  - PAYROLL_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - ROUTING_NUMBER
+  - SSN
+  confidence_type: supervised
+  keywords:
+  - dob
+  - salary
+  - bank
+  - wells
+  - fargo
+  - routing
+  - account
+  - email
+  - crodriguez
+  - fintech
+  - phone
+  label: EMAIL_ADDRESS
+  length: 21
+  score: 0.98
+  source: regex
+  structure: aaaaaaaaaa@aaaaaaa.aa
+- co_labels:
+  - DRIVERS_LICENSE_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - STREET_ADDRESS
+  confidence_type: supervised
+  keywords:
+  - claim
+  - vehicle
+  - tesla
+  - model
+  - vin
+  - plate
+  - accident
+  - market
+  - san
+  - francisco
+  - other
+  - driver
+  label: VIN
+  length: 17
+  score: 0.98
+  source: regex
+  structure: NAAAAAAANAANNNNNN
+- co_labels:
+  - DRIVERS_LICENSE_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - VIN
+  confidence_type: supervised
+  keywords:
+  - claim
+  - vehicle
+  - tesla
+  - model
+  - vin
+  - plate
+  - accident
+  - market
+  - san
+  - francisco
+  - other
+  - driver
+  label: STREET_ADDRESS
+  length: 37
+  score: 0.98
+  source: regex
+  structure: NNNN Aaaaaa Aa Aaa Aaaaaaaaa AA NNNNN
+- co_labels:
+  - DRIVERS_LICENSE_NUMBER
+  - PERSON_LAST_NAME
+  - STREET_ADDRESS
+  - VIN
+  confidence_type: semi_supervised
+  keywords:
+  - other
+  - driver
+  - lisa
+  - chen
+  - license
+  - state
+  - farm
+  - policy
+  - witness
+  - tom
+  - park
+  label: PERSON_FIRST_NAME
+  length: 3
+  score: 0.6687
+  source: gliner
+  structure: Aaa
+- co_labels:
+  - EMAIL_ADDRESS
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - STREET_ADDRESS
+  confidence_type: supervised
+  keywords:
+  - account
+  - holder
+  - aisha
+  - patel
+  - amex
+  - card
+  - ending
+  - account
+  - amex
+  - membership
+  - rewards
+  - authorized
+  label: MR_NUMBER
+  length: 10
+  score: 0.8668
+  source: gliner
+  structure: AA-NNNNNNN
+- co_labels:
+  - EMAIL_ADDRESS
+  - MR_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - ing
+  - account
+  - amex
+  - membership
+  - rewards
+  - authorized
+  - user
+  - raj
+  - patel
+  - billing
+  - ave
+  - apt
+  label: STREET_ADDRESS
+  length: 37
+  score: 0.98
+  source: regex
+  structure: NNN Naa Aaa Aaa NNA Aaa Aaaa AA NNNNN
+- co_labels:
+  - MR_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - STREET_ADDRESS
+  confidence_type: supervised
+  keywords:
+  - authorized
+  - user
+  - raj
+  - patel
+  - billing
+  - ave
+  - apt
+  - new
+  - york
+  - work
+  - email
+  - apatel
+  label: EMAIL_ADDRESS
+  length: 20
+  score: 0.98
+  source: regex
+  structure: aaaaaa@aaaaaaaaa.aaa
+- co_labels:
+  - DATE_OF_BIRTH
+  - EMAIL_ADDRESS
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - immigration
+  - case
+  - applicant
+  - wei
+  - zhang
+  - passport
+  - visa
+  - national
+  - arrival
+  - attorney
+  - maria
+  - garcia
+  label: NATIONAL_ID
+  length: 18
+  score: 0.98
+  source: regex
+  structure: NNNNNNNNNNNNNNNNNN
+- co_labels:
+  - EMAIL_ADDRESS
+  - NATIONAL_ID
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - ant
+  - wei
+  - zhang
+  - passport
+  - visa
+  - national
+  - arrival
+  - attorney
+  - maria
+  - garcia
+  - mgarcia
+  - lawfirm
+  label: DATE_OF_BIRTH
+  length: 10
+  score: 0.98
+  source: regex
+  structure: NNNN-NN-NN
+- co_labels:
+  - DATE_OF_BIRTH
+  - NATIONAL_ID
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - visa
+  - national
+  - arrival
+  - attorney
+  - maria
+  - garcia
+  - mgarcia
+  - lawfirm
+  - com
+  - phone
+  - bar
+  label: EMAIL_ADDRESS
+  length: 19
+  score: 0.98
+  source: regex
+  structure: aaaaaaa@aaaaaaa.aaa
+- co_labels:
+  - BACKGROUND_CHECK_REFERENCE
+  - PAYROLL_NUMBER
+  - PERSON_FIRST_NAME
+  - SECURITY_CLEARANCE
+  confidence_type: semi_supervised
+  keywords:
+  - ticket
+  - employee
+  - sarah
+  - kim
+  - badge
+  - sec
+  - payroll
+  - pay
+  - performance
+  - review
+  - exceeds
+  - expectations
+  label: PERSON_LAST_NAME
+  length: 3
+  score: 0.6936
+  source: gliner
+  structure: Aaa
+- co_labels:
+  - BACKGROUND_CHECK_REFERENCE
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - SECURITY_CLEARANCE
+  confidence_type: supervised
+  keywords:
+  - ticket
+  - employee
+  - sarah
+  - kim
+  - badge
+  - sec
+  - payroll
+  - pay
+  - performance
+  - review
+  - exceeds
+  - expectations
+  label: PAYROLL_NUMBER
+  length: 9
+  score: 0.8513
+  source: gliner
+  structure: AAA-NNNNN
+- co_labels:
+  - BACKGROUND_CHECK_REFERENCE
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - SECURITY_CLEARANCE
+  confidence_type: supervised
+  keywords:
+  - ticket
+  - employee
+  - sarah
+  - kim
+  - badge
+  - sec
+  - payroll
+  - pay
+  - performance
+  - review
+  - exceeds
+  - expectations
+  label: PAYROLL_NUMBER
+  length: 10
+  score: 0.99
+  source: gliner
+  structure: AAA-NNNNNN
+- co_labels:
+  - PAYROLL_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - SECURITY_CLEARANCE
+  confidence_type: supervised
+  keywords:
+  - payroll
+  - pay
+  - performance
+  - review
+  - exceeds
+  - expectations
+  - background
+  - check
+  - ref
+  - bgc
+  - security
+  - clearance
+  label: BACKGROUND_CHECK_REFERENCE
+  length: 11
+  score: 0.8594
+  source: gliner
+  structure: AAA-NNNNNNN
+- co_labels:
+  - BACKGROUND_CHECK_REFERENCE
+  - PAYROLL_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  confidence_type: supervised
+  keywords:
+  - review
+  - exceeds
+  - expectations
+  - background
+  - check
+  - ref
+  - bgc
+  - security
+  - clearance
+  - level
+  - secret
+  - emergency
+  label: SECURITY_CLEARANCE
+  length: 50
+  score: 0.99
+  source: field_label
+  structure: 'Aaaaaa. Aaaaaaaaa aaaaaaa: Aaaaa Aaa NNN-NNN-NNNN.'
+- co_labels:
+  - LAB_ACCESSION_NUMBER
+  - MEDICAL_RECORD_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PRESCRIPTION_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - insurance
+  - claim
+  - policyholder
+  - robert
+  - taylor
+  - policy
+  - hlt
+  - group
+  - grp
+  - acme
+  - diagnosis
+  - hypertension
+  label: PHI
+  length: 12
+  score: 0.98
+  source: regex
+  structure: aaaaaaaaaaaa
+- co_labels:
+  - MEDICAL_RECORD_NUMBER
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHI
+  - PRESCRIPTION_NUMBER
+  - PROFESSIONAL_LICENSE_NUMBER
+  confidence_type: supervised
+  keywords:
+  - acme
+  - diagnosis
+  - hypertension
+  - icd
+  - prescribed
+  - lisinopril
+  - lab
+  - accession
+  - lab
+  - pcp
+  - jennifer
+  - npi
+  label: LAB_ACCESSION_NUMBER
+  length: 11
+  score: 0.9267
+  source: gliner
+  structure: AAA-NNNNNNN
+- co_labels:
+  - DATE_OF_BIRTH
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - ROUTING_NUMBER
+  - SSN
+  - SWIFT_BIC_CODE
+  confidence_type: supervised
+  keywords:
+  - bank
+  - transfer
+  - from
+  - account
+  - routing
+  - iban
+  - swift
+  - amount
+  - customer
+  - james
+  - morrison
+  - ssn
+  label: IBAN
+  length: 22
+  score: 0.98
+  source: regex
+  structure: AANNAAAANNNNNNNNNNNNNN
+- co_labels:
+  - DATE_OF_BIRTH
+  - IBAN
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - ROUTING_NUMBER
+  - SSN
+  confidence_type: supervised
+  keywords:
+  - bank
+  - transfer
+  - from
+  - account
+  - routing
+  - iban
+  - swift
+  - amount
+  - customer
+  - james
+  - morrison
+  - ssn
+  label: SWIFT_BIC_CODE
+  length: 8
+  score: 0.98
+  source: regex
+  structure: AAAAAANA
+- co_labels:
+  - DATE_OF_BIRTH
+  - IBAN
+  - PERSON_FIRST_NAME
+  - PHONE_NUMBER
+  - ROUTING_NUMBER
+  - SSN
+  - SWIFT_BIC_CODE
+  confidence_type: supervised
+  keywords:
+  - routing
+  - iban
+  - swift
+  - amount
+  - customer
+  - james
+  - morrison
+  - ssn
+  - dob
+  - reference
+  - wire
+  label: PERSON_LAST_NAME
+  length: 8
+  score: 0.8057
+  source: gliner
+  structure: Aaaaaaaa
+- co_labels:
+  - DATE_OF_BIRTH
+  - IBAN
+  - PERSON_FIRST_NAME
+  - PHONE_NUMBER
+  - ROUTING_NUMBER
+  - SSN
+  - SWIFT_BIC_CODE
+  confidence_type: supervised
+  keywords:
+  - iban
+  - swift
+  - amount
+  - customer
+  - james
+  - morrison
+  - ssn
+  - dob
+  - reference
+  - wire
+  label: PERSON_LAST_NAME
+  length: 3
+  score: 0.98
+  source: derived
+  structure: AAA
+- co_labels:
+  - EMAIL_ADDRESS
+  - FAFSA_DATA
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - SSN
+  - TRANSCRIPT
+  confidence_type: semi_supervised
+  keywords:
+  - student
+  - record
+  - emily
+  - foster
+  - student
+  - stu
+  - fafsa
+  - fsa
+  - gpa
+  - transcript
+  - request
+  - parent
+  label: STUDENT_ID
+  length: 11
+  score: 0.7338
+  source: gliner
+  structure: AAA-NNNNNNN
+- co_labels:
+  - EMAIL_ADDRESS
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - SSN
+  - STUDENT_ID
+  - TRANSCRIPT
+  confidence_type: semi_supervised
+  keywords:
+  - student
+  - record
+  - emily
+  - foster
+  - student
+  - stu
+  - fafsa
+  - fsa
+  - gpa
+  - transcript
+  - request
+  - parent
+  label: FAFSA_DATA
+  length: 12
+  score: 0.7234
+  source: gliner
+  structure: AAA-NNNNNNNN
+- co_labels:
+  - EMAIL_ADDRESS
+  - FAFSA_DATA
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - SSN
+  - STUDENT_ID
+  confidence_type: supervised
+  keywords:
+  - student
+  - record
+  - emily
+  - foster
+  - student
+  - stu
+  - fafsa
+  - fsa
+  - gpa
+  - transcript
+  - request
+  - parent
+  label: TRANSCRIPT
+  length: 4
+  score: 0.8493
+  source: gliner
+  structure: N.NN
+- co_labels:
+  - EMAIL_ADDRESS
+  - FAFSA_DATA
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - SSN
+  - TRANSCRIPT
+  confidence_type: semi_supervised
+  keywords:
+  - record
+  - emily
+  - foster
+  - student
+  - stu
+  - fafsa
+  - fsa
+  - gpa
+  - transcript
+  - request
+  - parent
+  - michael
+  label: STUDENT_ID
+  length: 12
+  score: 0.4832
+  source: gliner
+  structure: AA-NNNN-NNNN
+- co_labels:
+  - FAFSA_DATA
+  - PERSON_FIRST_NAME
+  - PERSON_LAST_NAME
+  - PHONE_NUMBER
+  - SSN
+  - STUDENT_ID
+  - TRANSCRIPT
+  confidence_type: supervised
+  keywords:
+  - gpa
+  - transcript
+  - request
+  - parent
+  - michael
+  - foster
+  - phone
+  - email
+  - mfoster
+  - gmail
+  - com
+  - ssn
+  label: EMAIL_ADDRESS
+  length: 17
+  score: 0.98
+  source: regex
+  structure: aaaaaaa@aaaaa.aaa

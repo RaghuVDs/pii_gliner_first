@@ -307,5 +307,379 @@ runs:
     - 0.7826
     - 0.7826
     - 0.8261
-total_retrains: 1
-last_retrain: '2026-03-27T17:16:54.929472'
+- status: trained
+  timestamp: '2026-03-27T17:39:50.852195'
+  device: cuda
+  mixed_precision: true
+  num_examples: 81
+  train_size: 71
+  val_size: 37
+  num_labels: 35
+  num_keywords: 248
+  batch_size: 11
+  learning_rate: 0.003
+  weight_decay: 0.001
+  label_smoothing: 0.1
+  max_grad_norm: 1.0
+  max_epochs: 120
+  stopped_epoch: 120
+  best_epoch: 109
+  early_stopped: false
+  best_val_loss: 0.9229
+  train_accuracy: 1.0
+  val_accuracy: 0.8378
+  val_macro_precision: 0.7794
+  val_macro_recall: 0.8235
+  val_macro_f1: 0.7941
+  val_weighted_precision: 0.7838
+  val_weighted_recall: 0.8378
+  val_weighted_f1: 0.8018
+  val_per_label:
+    BACKGROUND_CHECK_REFERENCE:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    CARD_EXPIRATION_DATE:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    DATE_OF_BIRTH:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    DEVICE_APP_DATA:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    DRIVERS_LICENSE_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    EMAIL_ADDRESS:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    EMERGENCY_CONTACT_INFORMATION:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 1
+    EMPLOYEE_ID:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    FAFSA_DATA:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    HEALTH_PLAN_BENEFICIARY_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    IBAN:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    INCOME:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    LAB_ACCESSION_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    LICENSE_PLATE_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    MEDICAL_RECORD_NUMBER:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    MEDICARE_MEDICAID_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    MR_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    NATIONAL_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PAYROLL_NUMBER:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    PERSON_FIRST_NAME:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PERSON_LAST_NAME:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    PERSON_MIDDLE_NAME:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 1
+    PHI:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    PHONE_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    PRESCRIPTION_NUMBER:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    PROFESSIONAL_LICENSE_NUMBER:
+      precision: 0.5
+      recall: 1.0
+      f1: 0.6667
+      support: 2
+    ROUTING_NUMBER:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    SECURITY_CLEARANCE:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    SSN:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    STREET_ADDRESS:
+      precision: 0.0
+      recall: 0.0
+      f1: 0.0
+      support: 1
+    STUDENT_ID:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 2
+    SWIFT_BIC_CODE:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    TRANSCRIPT:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+    VIN:
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+      support: 1
+  val_confusion_matrix:
+    PERSON_FIRST_NAME:
+      PERSON_FIRST_NAME: 1
+    PERSON_LAST_NAME:
+      PERSON_MIDDLE_NAME: 1
+    SSN:
+      SSN: 1
+    EMAIL_ADDRESS:
+      EMAIL_ADDRESS: 1
+    PHONE_NUMBER:
+      PHONE_NUMBER: 2
+    DATE_OF_BIRTH:
+      DATE_OF_BIRTH: 1
+    EMPLOYEE_ID:
+      MEDICAL_RECORD_NUMBER: 1
+    PERSON_MIDDLE_NAME:
+      PERSON_MIDDLE_NAME: 1
+    DRIVERS_LICENSE_NUMBER:
+      DRIVERS_LICENSE_NUMBER: 1
+    LICENSE_PLATE_NUMBER:
+      LICENSE_PLATE_NUMBER: 1
+    VIN:
+      VIN: 1
+    MEDICAL_RECORD_NUMBER:
+      PROFESSIONAL_LICENSE_NUMBER: 1
+    PROFESSIONAL_LICENSE_NUMBER:
+      PROFESSIONAL_LICENSE_NUMBER: 2
+    PRESCRIPTION_NUMBER:
+      PROFESSIONAL_LICENSE_NUMBER: 1
+    MEDICARE_MEDICAID_ID:
+      MEDICARE_MEDICAID_ID: 1
+    DEVICE_APP_DATA:
+      DEVICE_APP_DATA: 1
+    EMERGENCY_CONTACT_INFORMATION:
+      EMERGENCY_CONTACT_INFORMATION: 1
+    STREET_ADDRESS:
+      EMERGENCY_CONTACT_INFORMATION: 1
+    CARD_EXPIRATION_DATE:
+      CARD_EXPIRATION_DATE: 1
+    INCOME:
+      INCOME: 1
+    HEALTH_PLAN_BENEFICIARY_NUMBER:
+      HEALTH_PLAN_BENEFICIARY_NUMBER: 1
+    PAYROLL_NUMBER:
+      EMPLOYEE_ID: 1
+    ROUTING_NUMBER:
+      ROUTING_NUMBER: 1
+    MR_NUMBER:
+      MR_NUMBER: 1
+    NATIONAL_ID:
+      NATIONAL_ID: 1
+    BACKGROUND_CHECK_REFERENCE:
+      BACKGROUND_CHECK_REFERENCE: 1
+    SECURITY_CLEARANCE:
+      SECURITY_CLEARANCE: 1
+    PHI:
+      PHI: 1
+    LAB_ACCESSION_NUMBER:
+      LAB_ACCESSION_NUMBER: 1
+    IBAN:
+      IBAN: 1
+    SWIFT_BIC_CODE:
+      SWIFT_BIC_CODE: 1
+    STUDENT_ID:
+      STUDENT_ID: 2
+    FAFSA_DATA:
+      FAFSA_DATA: 1
+    TRANSCRIPT:
+      TRANSCRIPT: 1
+  train_macro_f1: 1.0
+  train_weighted_f1: 1.0
+  history_sample:
+    train_loss:
+    - 5.2671
+    - 4.3662
+    - 4.1848
+    - 3.6534
+    - 2.2989
+    - 1.7225
+    - 1.5979
+    - 1.6493
+    - 1.2868
+    - 1.2296
+    - 1.1948
+    - 1.0988
+    - 1.0716
+    - 1.0688
+    - 1.1242
+    - 1.0398
+    - 1.1002
+    - 1.0564
+    - 1.0609
+    - 1.015
+    - 1.0009
+    - 1.0068
+    - 1.0539
+    - 1.0302
+    - 1.0337
+    val_loss:
+    - 4.1785
+    - 3.5535
+    - 2.9691
+    - 2.5784
+    - 1.3104
+    - 1.2339
+    - 1.2756
+    - 1.1599
+    - 1.0958
+    - 1.1076
+    - 1.0105
+    - 0.9648
+    - 0.9574
+    - 0.9686
+    - 0.9663
+    - 0.9745
+    - 0.943
+    - 0.9308
+    - 0.9465
+    - 0.9296
+    - 0.9254
+    - 0.9238
+    - 0.9246
+    - 0.9246
+    - 0.9246
+    train_acc:
+    - 0.0282
+    - 0.0845
+    - 0.0704
+    - 0.1549
+    - 0.5634
+    - 0.8169
+    - 0.7746
+    - 0.831
+    - 0.9014
+    - 0.9296
+    - 0.9859
+    - 1.0
+    - 1.0
+    - 0.9718
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    val_acc:
+    - 0.0811
+    - 0.1351
+    - 0.2703
+    - 0.3514
+    - 0.6757
+    - 0.7568
+    - 0.7297
+    - 0.7568
+    - 0.7568
+    - 0.8108
+    - 0.8378
+    - 0.8649
+    - 0.8108
+    - 0.8649
+    - 0.8378
+    - 0.8108
+    - 0.8378
+    - 0.8378
+    - 0.8378
+    - 0.8649
+    - 0.8649
+    - 0.8378
+    - 0.8378
+    - 0.8378
+    - 0.8378
+total_retrains: 2
+last_retrain: '2026-03-27T17:39:50.852195'
