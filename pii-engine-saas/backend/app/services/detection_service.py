@@ -142,6 +142,9 @@ class DetectionService:
         asyncio.create_task(
             self._record_stats(tenant_id, len(text), det_dicts)
         )
+        asyncio.create_task(
+            self._collect_training_data(tenant_id, detections, text)
+        )
 
         stats = self._compute_stats(det_dicts)
 
