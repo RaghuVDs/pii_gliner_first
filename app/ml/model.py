@@ -209,3 +209,110 @@ class PIIPatternModel(nn.Module):
         # ── Combine and classify ──
         combined = torch.cat([pattern_vec, context_vec], dim=-1)
         return self.classifier(combined)
+
+    def get_features(self, char_ids: torch.Tensor, context_features: torch.Tensor) -> torch.Tensor:
+        """Extract the 288-dim combined feature vector BEFORE the classifier head.
+
+        Used by few-shot learning to create prototypes in feature space.
+
+        Args:
+            char_ids: (batch, MAX_PATTERN_LEN) int tensor.
+            context_features: (batch, context_input_dim) float tensor.
+
+        Returns:
+            (batch, pattern_dim + context_dim) feature vectors.
+        """
+        pad_mask = char_ids != 0
+
+        # Pattern branch
+        char_emb = self.char_embed(char_ids)
+        x = char_emb.transpose(1, 2)
+        conv_outs = [nn.functional.gelu(conv(x)) for conv in self.convs]
+        x = torch.cat(conv_outs, dim=1)
+        x = x.transpose(1, 2)
+        x = self.conv_norm(x)
+        x = self.conv_dropout(x)
+        lstm_out, _ = self.lstm(x)
+        lstm_out = self.lstm_norm(lstm_out)
+        pattern_vec = self.attention(lstm_out, pad_mask)
+
+        # Context branch
+        context_vec = self.context_mlp(context_features)
+
+        return torch.cat([pattern_vec, context_vec], dim=-1)
+
+
+class PIIPatternModelCRF(nn.Module):
+    """CNN-BiLSTM + Attention + MLP + CRF for joint sequence labeling.
+
+    Wraps the standard PIIPatternModel encoder and adds a CRF layer
+    that jointly decodes all detections in a document, enforcing
+    label transition constraints.
+    """
+
+    def __init__(
+        self,
+        num_labels: int,
+        num_keywords: int = 400,
+        num_sources: int = 7,
+        **encoder_kwargs,
+    ):
+        super().__init__()
+        from app.ml.crf import CRFLayer
+
+        # Reuse the same encoder architecture
+        self.encoder = PIIPatternModel(
+            num_labels=num_labels,
+            num_keywords=num_keywords,
+            num_sources=num_sources,
+            **encoder_kwargs,
+        )
+
+        # Replace the classifier with an emission layer + CRF
+        # Get the combined dimension from the encoder
+        combined_dim = self.encoder.classifier[0].in_features
+        self.emission = nn.Linear(combined_dim, num_labels)
+        self.crf = CRFLayer(num_labels)
+        self.num_labels = num_labels
+
+        # Initialize emission layer
+        nn.init.kaiming_normal_(self.emission.weight, nonlinearity="relu")
+        nn.init.zeros_(self.emission.bias)
+
+    def forward(
+        self,
+        char_ids: torch.Tensor,
+        context_features: torch.Tensor,
+        labels: torch.LongTensor | None = None,
+        mask: torch.BoolTensor | None = None,
+    ) -> torch.Tensor | list[list[int]]:
+        """Forward pass.
+
+        Args:
+            char_ids: (batch, seq_len, MAX_PATTERN_LEN) — padded sequences of patterns.
+            context_features: (batch, seq_len, context_dim) — padded context features.
+            labels: (batch, seq_len) — gold labels for training. If None, runs Viterbi decode.
+            mask: (batch, seq_len) — True for real detections, False for padding.
+
+        Returns:
+            If labels provided: scalar CRF NLL loss.
+            If labels is None: list of decoded label index sequences.
+        """
+        batch, seq_len, pat_len = char_ids.shape
+        ctx_dim = context_features.shape[2]
+
+        # Flatten to encode all detections through the shared encoder
+        flat_chars = char_ids.view(batch * seq_len, pat_len)
+        flat_ctx = context_features.view(batch * seq_len, ctx_dim)
+
+        # Get encoder features (pre-classifier)
+        features = self.encoder.get_features(flat_chars, flat_ctx)
+
+        # Compute emissions
+        emissions = self.emission(features)  # (batch*seq_len, num_labels)
+        emissions = emissions.view(batch, seq_len, self.num_labels)
+
+        if labels is not None:
+            return self.crf(emissions, labels, mask)
+        else:
+            return self.crf.decode(emissions, mask)

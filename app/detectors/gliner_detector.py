@@ -1,8 +1,12 @@
 from __future__ import annotations
+import re
+import logging
 from typing import List, Optional, Tuple, Dict
 from app.models import Detection
 import yaml
 import os
+
+logger = logging.getLogger("pii_engine.gliner")
 
 try:
     import torch
@@ -22,6 +26,7 @@ class GLiNERDetector:
         self.model_name = model_name
         self.threshold = threshold
         self.model = None
+        self._bi_encoder = False  # Whether model supports bi-encoder optimization
 
         if self.enabled:
             try:
@@ -31,15 +36,15 @@ class GLiNERDetector:
                     device = "cuda"
                 elif torch.backends.mps.is_available():
                     device = "mps"
-                
+
                 print(f"Loading GLiNER on {device.upper()}...")
-                
+
                 if device == "cpu":
                     cpu_cores = os.cpu_count() or 4
                     torch.set_num_threads(cpu_cores)
-                    
+
                 self.model = GLiNER.from_pretrained(model_name).to(device)
-                
+
             except Exception as e:
                 self.enabled = False
                 print(f"GLiNER Load Error: {e}")
@@ -48,6 +53,13 @@ class GLiNERDetector:
         self.gliner_prompt_labels: List[str] = []
         self.label_thresholds: Dict[str, float] = {}
         self._load_taxonomy(taxonomy_path)
+
+        # ── Bi-Encoder Optimization ──────────────────────────────────
+        # Pre-compute label embeddings per tier (one-time cost at init).
+        # At inference, only text needs encoding — labels are cached.
+        self.tier_label_embeds: Dict[int, object] = {}
+        if self.enabled and self.model is not None:
+            self._init_bi_encoder_cache()
 
     # Maps taxonomy YAML group names to tier indices for tiered detection
     GROUP_TO_TIER = {
@@ -64,6 +76,7 @@ class GLiNERDetector:
         "communication_utility": 3, # Tier 3: Utility accounts, shipping
         "contextual": 3,            # Tier 3: Sensitive contextual data
         "fallback": 3,              # Tier 3: Unknown/fallback
+        "non_pii_suppression": 0,   # Tier 0: Runs alongside names to suppress org/product FPs
     }
 
     def _load_taxonomy(self, path: str):
@@ -95,12 +108,39 @@ class GLiNERDetector:
         all_thresholds = list(self.label_thresholds.values()) + [self.threshold]
         self._model_threshold = min(all_thresholds)
 
+    def _init_bi_encoder_cache(self):
+        """Pre-compute and cache label embeddings per tier for bi-encoder mode.
+
+        If the model supports encode_labels() (bi-encoder architecture),
+        label embeddings are computed once at init and reused for every
+        detect() call — only text needs encoding at inference time.
+        """
+        try:
+            # Test if model supports bi-encoder API
+            test_labels = self.tiered_labels.get(0, [])[:2]
+            if not test_labels:
+                return
+            _ = self.model.encode_labels(test_labels, batch_size=8)
+            self._bi_encoder = True
+
+            for tier_idx, tier_labels in self.tiered_labels.items():
+                if tier_labels:
+                    self.tier_label_embeds[tier_idx] = self.model.encode_labels(
+                        tier_labels, batch_size=8
+                    )
+            logger.info(
+                f"[GLiNER] Bi-encoder cache initialized — "
+                f"{sum(len(v) for v in self.tiered_labels.values())} label embeddings cached across {len(self.tiered_labels)} tiers"
+            )
+        except (NotImplementedError, AttributeError, TypeError):
+            self._bi_encoder = False
+            logger.info("[GLiNER] Model does not support bi-encoder API — using standard predict_entities()")
+
     def detect(self, text: str) -> List[Detection]:
         if not self.enabled or not self.model or not text.strip():
             return []
 
         detections: List[Detection] = []
-        # INCREASED OVERLAP from 150 to 300 to ensure contextual clues are captured
         chunks = self._sliding_window_chunker(text, window_size=1500, overlap=300)
 
         if not chunks:
@@ -116,41 +156,65 @@ class GLiNERDetector:
             if not tier_labels:
                 continue
 
+            # ── Bi-encoder path: batch all chunks with cached label embeddings ──
+            if self._bi_encoder and tier_idx in self.tier_label_embeds:
+                try:
+                    batch_results = self.model.batch_predict_with_embeds(
+                        texts=chunk_texts,
+                        labels_embeddings=self.tier_label_embeds[tier_idx],
+                        labels=tier_labels,
+                        threshold=self._model_threshold,
+                        batch_size=min(16, len(chunk_texts)),
+                    )
+                    for chunk_idx, preds in enumerate(batch_results):
+                        chunk_start = chunk_starts[chunk_idx]
+                        for pred in preds:
+                            det = self._pred_to_detection(pred, chunk_start, text)
+                            if det is not None:
+                                detections.append(det)
+                    continue  # Skip standard path for this tier
+                except Exception as e:
+                    logger.warning(f"[GLiNER] Bi-encoder batch failed for tier {tier_idx}, falling back: {e}")
+
+            # ── Standard path: per-chunk predict_entities() ──
             for text_chunk, chunk_start in zip(chunk_texts, chunk_starts):
                 preds = self.model.predict_entities(
                     text_chunk,
                     tier_labels,
                     threshold=self._model_threshold,
                 )
-
                 for pred in preds:
-                    found_alias = pred["label"]
-                    score = float(pred.get("score", 0.0))
-
-                    if score < self.label_thresholds.get(found_alias, self.threshold):
-                        continue
-
-                    strict_amex_label = self.alias_to_amex_label.get(found_alias, "UNKNOWN_PII")
-                    start = chunk_start + int(pred["start"])
-                    end = chunk_start + int(pred["end"])
-                    value = text[start:end]
-
-                    if not value.strip():
-                        continue
-
-                    detections.append(
-                        Detection(
-                            label=strict_amex_label,
-                            text=value,
-                            start=start,
-                            end=end,
-                            score=score,
-                            source="gliner",
-                            meta={"gliner_alias": found_alias}
-                        )
-                    )
+                    det = self._pred_to_detection(pred, chunk_start, text)
+                    if det is not None:
+                        detections.append(det)
 
         return self._deduplicate_overlap_detections(detections)
+
+    def _pred_to_detection(self, pred: dict, chunk_start: int, full_text: str) -> Optional[Detection]:
+        """Convert a GLiNER prediction dict to a Detection, or None if filtered."""
+        found_alias = pred["label"]
+        score = float(pred.get("score", 0.0))
+
+        if score < self.label_thresholds.get(found_alias, self.threshold):
+            return None
+
+        strict_amex_label = self.alias_to_amex_label.get(found_alias, "UNKNOWN_PII")
+        start = chunk_start + int(pred["start"])
+        end = chunk_start + int(pred["end"])
+        value = full_text[start:end]
+
+        if not value.strip():
+            return None
+
+        return Detection(
+            label=strict_amex_label,
+            text=value,
+            start=start,
+            end=end,
+            score=score,
+            source="gliner",
+            meta={"gliner_alias": found_alias},
+        )
 
     @staticmethod
     def _deduplicate_overlap_detections(detections: List[Detection]) -> List[Detection]:
@@ -196,20 +260,40 @@ class GLiNERDetector:
         final = _sweep_dedup(kept, threshold=0.90, same_label_only=False)
         return final
 
+    # Sentence-ending punctuation followed by whitespace and uppercase letter
+    _SENTENCE_BOUNDARY_RE = re.compile(r'[.!?]\s+(?=[A-Z])')
+
     def _sliding_window_chunker(self, text: str, window_size: int, overlap: int) -> List[Tuple[str, int]]:
+        """Split text into overlapping chunks, snapping to sentence boundaries.
+
+        Priority order for break points:
+          1. Sentence boundary ([.!?] followed by space + uppercase)
+          2. Newline
+          3. Space
+        This produces cleaner chunks that preserve semantic context.
+        """
         chunks = []
         start = 0
         text_length = len(text)
         while start < text_length:
             end = min(start + window_size, text_length)
             if end < text_length:
-                # Snap to a newline if possible instead of just a space for cleaner boundaries
-                last_break = text.rfind('\n', start, end)
-                if last_break == -1:
-                    last_break = text.rfind(' ', start, end)
-                if last_break != -1: 
-                    end = last_break
+                # Try sentence boundary first (best semantic split)
+                best_break = -1
+                # Search in the last 30% of the window for a sentence boundary
+                search_start = start + int(window_size * 0.7)
+                for m in self._SENTENCE_BOUNDARY_RE.finditer(text, search_start, end):
+                    best_break = m.end()  # Position right after the punctuation + space
+                if best_break == -1:
+                    # Fall back to newline
+                    best_break = text.rfind('\n', start, end)
+                if best_break == -1:
+                    # Fall back to space
+                    best_break = text.rfind(' ', start, end)
+                if best_break > start:
+                    end = best_break
             chunks.append((text[start:end], start))
             start = end - overlap
-            if start <= chunks[-1][1]: start = end
+            if start <= chunks[-1][1]:
+                start = end
         return chunks

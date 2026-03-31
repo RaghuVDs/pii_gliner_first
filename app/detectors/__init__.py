@@ -3,6 +3,8 @@ from .gliner_detector import GLiNERDetector
 from .field_detector import PatternFieldDetector
 from .context_detector import ContextDetector
 from .regex_detector import RegexDetector
+from .entropy_detector import EntropyAnomalyDetector
+from .anomaly_detector import ContextualAnomalyDetector
 
 __all__ = [
     "BaseDetector",
@@ -10,4 +12,6 @@ __all__ = [
     "PatternFieldDetector",
     "ContextDetector",
     "RegexDetector",
+    "EntropyAnomalyDetector",
+    "ContextualAnomalyDetector",
 ]

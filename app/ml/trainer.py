@@ -46,13 +46,21 @@ METRICS_LOG_PATH = os.path.join(ML_SAVE_DIR, "metrics_log.yaml")
 
 # ── Hyperparameters ──────────────────────────────────────────────────
 MIN_EXAMPLES_TO_TRAIN = 30
-RETRAIN_INTERVAL = 100
+RETRAIN_INTERVAL = 10  # Auto-retrain after every 10 new examples collected
 COLLECTION_SCORE_THRESHOLD = 0.40
 PSEUDO_LABEL_THRESHOLD = 0.75
 VALIDATION_SPLIT = 0.15
 EARLY_STOPPING_PATIENCE = 20
 LABEL_SMOOTHING = 0.1
 MAX_GRAD_NORM = 1.0
+
+# Person name labels excluded from LSTM training — their structure patterns
+# (e.g., "Aaaa Aaa") are too generic and cause massive false positives.
+# Names are better handled by GLiNER (semantic) + name propagation (postprocessing).
+NAME_LABELS = frozenset({
+    "PERSON_FULL_NAME", "PERSON_FIRST_NAME", "PERSON_LAST_NAME",
+    "PERSON_MIDDLE_NAME", "CARDMEMBER_NAME",
+})
 
 
 def _load_yaml(path: str) -> Any:
@@ -343,7 +351,11 @@ class SelfTrainer:
     # ── Data Collection ─────────────────────────────────────────────
 
     def collect_from_detections(self, detections: List[Detection], full_text: str) -> int:
-        """Collect PII-safe training examples from high-confidence detections."""
+        """Collect PII-safe training examples from high-confidence detections.
+
+        Skips person name labels — their structure patterns are too generic
+        for pattern-based learning and cause false positives.
+        """
         if not detections:
             return 0
 
@@ -351,6 +363,8 @@ class SelfTrainer:
         for d in detections:
             if d.score < COLLECTION_SCORE_THRESHOLD:
                 continue
+            if d.label in NAME_LABELS:
+                continue  # Name structures too generic for pattern learning
             val = (d.text or "").strip()
             if not val or len(val) < 2:
                 continue
@@ -428,6 +442,8 @@ class SelfTrainer:
         new_examples = []
         for rule in promoted_rules:
             label = rule.get("label", "UNKNOWN_PII")
+            if label in NAME_LABELS:
+                continue  # Skip name structures — too generic for pattern learning
             keywords = rule.get("keywords", [])
             co_labels = rule.get("co_occurring_labels", [])
             structures = rule.get("structure_patterns", [])
@@ -508,8 +524,20 @@ class SelfTrainer:
         total = data.get("total_count", 0) if isinstance(data, dict) else 0
         return total >= MIN_EXAMPLES_TO_TRAIN
 
+    # Labels to strip from training data before every retrain.
+    # Name structures are too generic; unknowns teach the model nothing useful.
+    _STRIP_LABELS = NAME_LABELS | frozenset({
+        "UNKNOWN_PII", "UNKNOWN_IDENTIFIER", "UNKNOWN_SECRET",
+        "CODE", "REFERENCE_IDENTIFIER",
+    })
+
     def retrain(self, epochs: int | None = None) -> Dict[str, Any]:
         """Train the model with full ML discipline.
+
+        Automatically cleans training data before each run:
+          - Removes person name examples (too generic)
+          - Removes UNKNOWN_* labels (teach the model nothing)
+          - Deduplicates examples
 
         Args:
             epochs: Max epochs. If None, auto-calculated from dataset size.
@@ -519,6 +547,17 @@ class SelfTrainer:
         """
         data = _load_yaml(self.training_data_path)
         all_examples = data.get("examples", []) if isinstance(data, dict) else []
+
+        # Auto-cleanup: strip name labels and unknowns before every retrain
+        before = len(all_examples)
+        all_examples = [ex for ex in all_examples if ex.get("label") not in self._STRIP_LABELS]
+        stripped = before - len(all_examples)
+        if stripped > 0:
+            logger.info(f"[LSTM] Cleaned {stripped} name/unknown examples from training data")
+            data["examples"] = all_examples
+            data["total_count"] = len(all_examples)
+            _save_yaml(self.training_data_path, data)
+
         all_examples = _deduplicate_examples(all_examples)
 
         if len(all_examples) < MIN_EXAMPLES_TO_TRAIN:

@@ -40,6 +40,10 @@ STREET_ADDRESS:
   # (?<![A-Za-z0-9\-]) prevents matching numbers inside codes like "ICD-10"
   # {1,60} limits the middle text to prevent runaway matches
   - '(?i)(?<![A-Za-z0-9\-])(\d{1,5}\s+[A-Za-z0-9\s.,]{1,60}\b(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Circle|Cir|Way|Place|Pl|Terrace|Ter|Highway|Hwy|Parkway|Pkwy)\b\.?(?:[\s,]+(?:Apt|Suite|Ste|Unit|#)\s*[A-Za-z0-9]+)?(?:[\s,]+[A-Za-z\s]+[\s,]+[A-Za-z]{2}[\s,]+\d{5}(?:-\d{4})?)?)'
+  # Abbreviated: "Rd. #29 Milwaukee Oregon 97267" (street type before number + city state zip)
+  - '(?i)((?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Way|Place|Pl|Highway|Hwy)\.?\s*#?\s*\d{1,5}[\s,]+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*[\s,]+\d{5}(?:-\d{4})?)'
+  # Street name with type: "Southeast Vineyard Rd." / "N Main St"
+  - '(?i)((?:North|South|East|West|Northeast|Northwest|Southeast|Southwest|N\.?|S\.?|E\.?|W\.?|NE|NW|SE|SW)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Way|Place|Pl|Highway|Hwy)\.?)'
   # PO Box
   - '(?i)(P\.?\s*O\.?\s*Box\s+\d+(?:[\s,]+[A-Za-z\s]+[\s,]+[A-Za-z]{2}[\s,]+\d{5})?)'
 
@@ -76,6 +80,8 @@ PASSWORD:
 # -- FINANCIAL --
 
 CREDIT_CARD_NUMBER:
+  # Dashed: 4532-7891-2345-8834, 3782-822463-10005
+  - '(?<!\d)((?:4\d{3}|5[1-5]\d{2}|6(?:011|5\d{2})|3[47]\d{2})[\-\s]\d{3,6}[\-\s]\d{3,6}[\-\s]\d{3,5})(?!\d)'
   # Continuous: Visa, MC, Discover, Amex, JCB, Diners, UnionPay
   - '(?<!\d)(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12})(?!\d)'
   - '(?<!\d)(3[47]\d{13})(?!\d)'
@@ -235,7 +241,8 @@ ETHNICITY_OR_RACE:
   - '(?i)(?:(?:race|ethnicity)\s*[:=]\s*)((?:caucasian|white|black|african[\s-]?american|hispanic|latino|latina|latinx|asian|pacific[\s-]?islander|native[\s-]?american|indigenous|biracial|multiracial|middle[\s-]?eastern|south[\s-]?asian)[a-z]*)'
 
 NATIONALITY:
-  - '(?i)(?:citizenship (?:in the\s+|of\s+)|citizen of\s+|national(?:ity)?\s*[:=]?\s*)([A-Z][a-zA-Z\s]+(?:and\s+[A-Z][a-zA-Z\s]+)?)'
+  # Requires explicit "citizenship" or "nationality" keyword — not "national" (too broad)
+  - '(?i)(?:citizenship (?:in the\s+|of\s+)|citizen of\s+|nationality\s*[:=]\s*)([A-Z][a-zA-Z\s]{2,30})'
 
 POLITICAL_OPINIONS:
   - '(?i)\b(registered (?:democrat|republican|independent|libertarian|green party)|political (?:party|affiliation|opinion|belief)\s*[:=]\s*[A-Za-z]+|(?:democrat|republican|libertarian|green party|conservative|liberal|progressive) voter)\b'
@@ -342,8 +349,10 @@ PROFESSIONAL_LICENSE_NUMBER:
 # -- FINANCIAL (EXTENDED) --
 
 SWIFT_BIC_CODE:
-  # 8 or 11 char SWIFT/BIC: 6 letters + 2 alphanum + optional 3 alphanum
+  # With keyword prefix: "SWIFT code: COBADEFFXXX"
   - '(?i)(?:(?:swift|bic)\s*(?:code)?\s*[:=]?\s*)([A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b'
+  # Bare 8 or 11 char SWIFT/BIC: 4 bank letters + 2 country letters + 2 location + optional 3 branch
+  - '(?<![A-Za-z])([A-Z]{4}(?:US|GB|DE|FR|CH|JP|AU|CA|NL|ES|IT|BE|AT|SE|NO|DK|FI|IE|PT|LU|HK|SG|IN|BR|MX|ZA|AE|SA|KR|CN|TW|NZ|PL|CZ|HU|RU|TR|GR|IL|TH|MY|PH|ID|VN|CL|CO|PE|AR|EG|KE|NG|GH)[A-Z0-9]{2}(?:[A-Z0-9]{3})?)(?![A-Za-z])'
 
 INVESTMENT_ACCOUNT_NUMBER:
   # Require at least one digit in the captured value to avoid matching bare words like "account"

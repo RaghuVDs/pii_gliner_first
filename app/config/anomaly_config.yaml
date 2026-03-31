@@ -1,0 +1,12 @@
+# Anomaly Detection Configuration
+
+entropy_detector:
+  entropy_threshold: 4.2      # Shannon entropy bits/char (natural language ≈ 3.5-4.0, pure random ≈ 5.0)
+  min_span_len: 16            # Minimum characters to evaluate
+  max_span_len: 128           # Maximum characters to evaluate
+  alnum_ratio: 0.75           # Minimum alphanumeric character ratio
+  step: 4                     # Sliding window step size
+
+contextual_anomaly_detector:
+  min_value_len: 4            # Minimum value length for field detection
+  max_value_len: 80           # Maximum value length for field detection

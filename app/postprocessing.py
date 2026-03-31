@@ -37,6 +37,109 @@ GRAMMAR_GATE_BLOCKLIST = {
     "july", "august", "september", "october", "november", "december",
 }
 
+# ── Dynamic Person-vs-Org Disambiguation ─────────────────────────────
+# Instead of hardcoded org word lists, we check BEHAVIORAL CONTEXT:
+# - Person names are introduced: "my name is X", "I'm X", "this is X"
+# - Person names are re-referenced: "Hi X", "Thank you X", "X's SSN"
+# - Names without person-context evidence are low-confidence → downgrade
+#   to UNKNOWN_PII rather than dropping (still gets redacted)
+
+_NAME_WINDOW = 60
+
+# Patterns that CONFIRM a word is being used as a person name
+_PERSON_CONTEXT = re.compile(
+    r'(?i)(?:'
+    # Introductions
+    r'(?:my name is|i\'?m|this is|i am|name:?|called)\s+$'
+    r'|(?:mr\.?|mrs\.?|ms\.?|dr\.?|prof\.?|officer|judge|esq\.?)\s*$'
+    # Possessives and personal references
+    r'|^\s*(?:\'s\b|said|called|told|asked|replied|spoke|phoned|signed)'
+    r'|^\s*(?:,?\s*(?:phone|ssn|dob|email|address|cell|account|husband|wife|son|daughter))'
+    # Direct address
+    r'|(?:hi|hello|hey|dear|thank(?:s| you),?)\s+$'
+    r')'
+)
+
+def _has_person_evidence(text: str, det: Detection) -> bool:
+    """Check if a detected name has contextual evidence of being a person.
+
+    Returns True if the surrounding text confirms this is a person name.
+    Returns False if there's no person-context evidence (might be an org).
+    """
+    before_start = max(0, det.start - _NAME_WINDOW)
+    after_end = min(len(text), det.end + _NAME_WINDOW)
+    text_before = text[before_start:det.start]
+    text_after = text[det.end:after_end]
+
+    # Check person context patterns
+    if _PERSON_CONTEXT.search(text_before + "$"):
+        return True
+    if _PERSON_CONTEXT.search("^" + text_after):
+        return True
+
+    return False
+
+
+def _is_part_of_long_capitalized_phrase(text: str, det: Detection) -> bool:
+    """Check if the detected name is part of a 3+ word capitalized phrase.
+
+    "Meridian Financial Advisors" → True (3 cap words, name is just part of it)
+    "Jonathan Michael Chen" → False (this IS the full person name)
+    """
+    before_start = max(0, det.start - _NAME_WINDOW)
+    after_end = min(len(text), det.end + _NAME_WINDOW)
+    text_before = text[before_start:det.start]
+    text_after = text[det.end:after_end]
+
+    # Count capitalized words after the detection
+    right_words = text_after.split()
+    cap_right = 0
+    for w in right_words:
+        clean = w.strip(".,;:!?()[]{}\"'-")
+        if clean and len(clean) > 1 and clean[0].isupper() and not clean.isupper():
+            cap_right += 1
+        else:
+            break
+
+    # A person name followed by 2+ more capitalized non-name words
+    # is likely an org: "Meridian [Financial Advisors]"
+    # But "Jonathan [Michael Chen]" is just a 3-part person name — those
+    # have already been split into first/middle/last before this runs.
+    # So if we see cap_right >= 2 on a single-word detection, it's org-like.
+    name_words = len(det.text.split())
+    if name_words == 1 and cap_right >= 2:
+        return True
+
+    return False
+
+
+def _looks_like_org_name(text: str, det: Detection) -> bool:
+    """Dynamically detect if a person name detection is actually an organization.
+
+    Logic:
+      1. If there's person-context evidence → confirmed person, keep it
+      2. If the name is part of a 3+ word capitalized phrase (like an org name)
+         AND has no person-context → likely an org
+      3. Otherwise → keep as person (benefit of the doubt)
+    """
+    if det.label not in {"PERSON_FIRST_NAME", "PERSON_LAST_NAME",
+                          "PERSON_MIDDLE_NAME", "PERSON_FULL_NAME"}:
+        return False
+
+    # High-confidence detections from GLiNER/regex get benefit of the doubt
+    if det.score >= 0.85 and det.source in ("gliner", "regex", "field_label"):
+        return False
+
+    # If there's explicit person-context evidence, it's a person
+    if _has_person_evidence(text, det):
+        return False
+
+    # If it's part of a long capitalized phrase with no person evidence → org
+    if _is_part_of_long_capitalized_phrase(text, det):
+        return True
+
+    return False
+
 def apply_universal_dynamic_filters(text: str, detections: List[Detection]) -> List[Detection]:
     kept: List[Detection] = []
 

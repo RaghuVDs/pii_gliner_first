@@ -3,7 +3,17 @@ from typing import List
 from app.models import Detection
 from app.utils import overlap
 
+# Non-PII suppression labels — used only for overlap resolution to suppress
+# false positives (e.g., org name suppresses person name). Stripped from final output.
+SUPPRESSION_LABELS = frozenset({
+    "_ORGANIZATION", "_PRODUCT", "_LOCATION", "_MEDICAL_TERM", "_JOB_TITLE",
+})
+
 LABEL_PRIORITY = {
+    # Suppression labels — high priority so they win over person names in overlaps
+    "_ORGANIZATION": 95, "_PRODUCT": 94, "_LOCATION": 93,
+    "_MEDICAL_TERM": 92, "_JOB_TITLE": 91,
+
     # Contextual Highest -- Protected/sensitive categories
     "BIOMETRIC_INFORMATION": 100, "PHI": 100, "GENETIC_INFORMATION": 100,
     "CHILDBEARING_STATUS": 99, "CRIMINAL_RECORD": 99, "ETHNICITY_OR_RACE": 99,
@@ -78,16 +88,23 @@ LABEL_PRIORITY = {
     "UTILITY_ACCOUNT_NUMBER": 72, "CABLE_INTERNET_ACCOUNT": 72,
     "SOCIAL_MEDIA_PROFILE": 70, "SHIPPING_TRACKING_NUMBER": 70,
     "CDR_CALL_DETAIL_RECORD": 70, "CUSTOMER_PURCHASE_DATA": 69,
-    "EMERGENCY_CONTACT_INFORMATION": 68, "UNKNOWN_PII": 10,
+    "EMERGENCY_CONTACT_INFORMATION": 68, "UNKNOWN_PII": 10, "UNKNOWN_SECRET": 12,
 }
 
 SOURCE_PRIORITY = {
-    "gliner": 50,        # PRIMARY — semantic understanding handles diverse transcripts
-    "pattern_lstm": 45,  # Learned patterns — trained from GLiNER/regex, trusted near-primary
-    "field_label": 40,   # Supplement — explicit label:value patterns
-    "context": 35,       # Keyword-confirmed promotions
-    "regex": 30,         # Fallback — pattern matching
-    "derived": 25,       # Split from trusted sources (GLiNER/regex) — should rank near regex
+    "gliner": 50,              # PRIMARY — semantic understanding handles diverse transcripts
+    "pattern_lstm": 45,        # Learned patterns — trained from GLiNER/regex, trusted near-primary
+    "few_shot": 43,            # Few-shot prototype match — rapid adaptation from 2-3 examples
+    "field_label": 40,         # Supplement — explicit label:value patterns
+    "entropy_anomaly": 38,     # High-entropy secrets/tokens detection
+    "context": 35,             # Keyword-confirmed promotions
+    "contextual_anomaly": 33,  # Unknown field patterns detected by anomaly detector
+    "intent": 31,              # Conversational intent patterns ("my X is Y")
+    "qa_linker": 42,           # Question-answer linked PII (agent asked, customer answered)
+    "anchor": 38,              # Anchor-and-expand (zip code → address, etc.)
+    "identifier": 30,         # Universal identifier spotter (catch-all safety net)
+    "regex": 30,               # Fallback — pattern matching
+    "derived": 25,             # Split from trusted sources (GLiNER/regex) — should rank near regex
     "propagated": 15,
 }
 
@@ -222,4 +239,9 @@ def resolve_detections(detections: List[Detection]) -> List[Detection]:
             kept.append(d)
 
     kept.sort(key=lambda x: (x.start, x.end))
+
+    # Strip suppression labels — they exist only to suppress false positives
+    # during overlap resolution. They are NOT PII and should not appear in output.
+    kept = [d for d in kept if d.label not in SUPPRESSION_LABELS]
+
     return kept

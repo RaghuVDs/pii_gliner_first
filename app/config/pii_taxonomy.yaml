@@ -14,7 +14,7 @@ general:
   ALIAS_NICKNAME: { gliner_aliases: ["alias", "nickname", "also known as", "pen name", "stage name"], threshold: 0.45 }
   EMAIL_ADDRESS: { gliner_aliases: ["email", "email address"], threshold: 0.35 }
   PHONE_NUMBER: { gliner_aliases: ["phone number", "telephone", "mobile number", "contact number", "fax number"], threshold: 0.35 }
-  STREET_ADDRESS: { gliner_aliases: ["address", "street address", "billing address", "home address", "mailing address", "postal address"], threshold: 0.40 }
+  STREET_ADDRESS: { gliner_aliases: ["address", "street address", "billing address", "home address", "mailing address", "postal address", "physical address where someone lives or works", "location with street number and zip code"], threshold: 0.35 }
   DATE_OF_BIRTH: { gliner_aliases: ["date of birth", "dob", "birth date"], threshold: 0.35 }
   PLACE_OF_BIRTH: { gliner_aliases: ["place of birth", "birth place", "city of birth", "born in"], threshold: 0.40 }
   AGE: { gliner_aliases: ["age", "years old"], threshold: 0.35 }
@@ -43,12 +43,12 @@ country_specific:
 # ── TIER 1: Financial & AMEX-Specific ─────────────────────────────────
 
 financial_general:
-  BANK_ACCOUNT_NUMBER: { gliner_aliases: ["bank account", "checking account", "savings account", "money market account", "certificate of deposit number", "safe deposit box number"], threshold: 0.30 }
+  BANK_ACCOUNT_NUMBER: { gliner_aliases: ["bank account", "checking account", "savings account", "money market account", "certificate of deposit number", "safe deposit box number", "financial account number given by a customer"], threshold: 0.30 }
   ROUTING_NUMBER: { gliner_aliases: ["routing number", "aba number", "aba routing"], threshold: 0.30 }
-  SWIFT_BIC_CODE: { gliner_aliases: ["swift code", "bic code", "swift bic", "bank identifier code"], threshold: 0.35 }
+  SWIFT_BIC_CODE: { gliner_aliases: ["swift code", "bic code", "swift bic", "bank identifier code", "international bank routing code"], threshold: 0.30 }
   CARD_EXPIRATION_DATE: { gliner_aliases: ["expiration date", "card expiration", "exp date"], threshold: 0.35 }
   CARD_SECURITY_CODE: { gliner_aliases: ["security code", "cvv", "cvc", "cid", "cvv2"], threshold: 0.35 }
-  CREDIT_CARD_NUMBER: { gliner_aliases: ["visa", "mastercard", "discover", "credit card number", "debit card number", "prepaid card number"], threshold: 0.25 }
+  CREDIT_CARD_NUMBER: { gliner_aliases: ["visa", "mastercard", "discover", "credit card number", "debit card number", "prepaid card number", "payment card number with digits", "card number used for payment"], threshold: 0.25 }
   EBT_CARD_NUMBER: { gliner_aliases: ["ebt card number", "ebt card", "electronic benefit transfer card"], threshold: 0.35 }
   IBAN: { gliner_aliases: ["iban", "international bank account number"], threshold: 0.30 }
   CRYPTO_WALLET: { gliner_aliases: ["crypto wallet", "bitcoin address", "ethereum address", "cryptocurrency wallet address"], threshold: 0.35 }
@@ -193,4 +193,25 @@ contextual:
   VETERAN_STATUS: { gliner_aliases: ["veteran status", "military veteran", "active duty"], threshold: 0.40 }
 
 fallback:
-  UNKNOWN_PII: { gliner_aliases: ["pii", "sensitive data", "secret"], threshold: 0.50 }
+  UNKNOWN_PII: { gliner_aliases: [
+    "personally identifiable information",
+    "sensitive personal data",
+    "private identifier or reference number",
+    "account number or membership number",
+    "identification code or reference code",
+    "confidential number shared by a customer",
+    "personal reference number or tracking number"
+  ], threshold: 0.40 }
+
+# ── NON-PII SUPPRESSION LABELS ──────────────────────────────────────
+# These are NOT PII — they exist only to suppress false positives.
+# When GLiNER detects "Meridian Financial Advisors" as ORGANIZATION,
+# the overlap resolver removes any PERSON_FIRST_NAME "Meridian" that
+# overlaps. After resolution, these labels are stripped from final output.
+
+non_pii_suppression:
+  _ORGANIZATION: { gliner_aliases: ["organization", "company", "company name", "institution", "corporation", "business name", "firm name", "employer name"], threshold: 0.30 }
+  _PRODUCT: { gliner_aliases: ["product name", "brand name", "software name", "application name", "drug name", "medication name"], threshold: 0.40 }
+  _LOCATION: { gliner_aliases: ["city", "country", "state", "geographic location", "place name"], threshold: 0.40 }
+  _MEDICAL_TERM: { gliner_aliases: ["medical condition", "disease", "diagnosis", "medical procedure", "symptom"], threshold: 0.40 }
+  _JOB_TITLE: { gliner_aliases: ["job title", "occupation", "professional role", "position title"], threshold: 0.40 }
