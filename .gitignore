@@ -1,6 +1,28 @@
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Virtual environments
+gliner/
+gliner-linux/
 Lib/
 Scripts/
 Include/
+bin/
+lib/
+lib64/
+include/
+share/
 pyvenv.cfg
-__pycache__/
-*.pyc
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Perf / autotune cache
+app/perf/tuning_cache.yaml
+app/perf/__pycache__/
+
+# Test artifacts
+tests/accuracy_results.txt
+tests/fake_transcripts.jsonl
+tests/model_diff.yaml

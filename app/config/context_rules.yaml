@@ -1,216 +1,511 @@
-# ======================================================================
-# CONTEXT RULES — Keyword patterns for contextual promotion/detection
-# Keys MUST be valid PII taxonomy labels (used by ContextDetector dynamic rules)
-# Values are regex patterns matched against the detection's neighborhood text
-#
-# New rules can be auto-promoted here by the Adaptive Learning system
-# (see app/adaptive_learning.py and pending_rules.yaml)
-# ======================================================================
-
-# -- SECURITY --
 MOTHERS_MAIDEN_NAME:
-  - mother's maiden name
-  - "mother\u2019s maiden name"
-  - maiden name
-
+- mother's maiden name
+- mother’s maiden name
+- maiden name
 SECURITY_QUESTION:
-  - security question
-  - challenge question
-  - primary question
-  - secondary question
-
+- security question
+- challenge question
+- primary question
+- secondary question
 SECURITY_ANSWER:
-  - stored answer
-  - security answer
-
+- stored answer
+- security answer
 PASSWORD:
-  - password
-  - passcode
-  - passphrase
-
+- password
+- passcode
+- passphrase
 PIN:
-  - \bpin\b
-  - passcode
-  - ivr
-  - portal access pin
-  - personal identification number
-
+- \bpin\b
+- passcode
+- ivr
+- portal access pin
+- personal identification number
 ONE_TIME_CODE:
-  - one.?time
-  - \botp\b
-  - verification code
-  - backup code
-  - 2fa
-  - mfa
-
-# -- FINANCIAL --
+- one.?time
+- \botp\b
+- verification code
+- backup code
+- 2fa
+- mfa
 ROUTING_NUMBER:
-  - routing
-  - \baba\b
-  - transit number
-
+- routing
+- \baba\b
+- transit number
 BANK_ACCOUNT_NUMBER:
-  - bank account
-  - checking account
-  - savings account
-  - account number
-  - acct\s*#
-
+- bank account
+- checking account
+- savings account
+- account number
+- acct\s*#
 CREDIT_CARD_NUMBER:
-  - credit card
-  - card number
-  - debit card
-
+- credit card
+- card number
+- debit card
 ACCOUNT_NUMBER_AMEX:
-  - amex account
-  - american express account
-
+- amex account
+- american express account
 MR_NUMBER:
-  - membership rewards
-  - mr account
-  - mr number
-  - loyalty points
-
+- membership rewards
+- mr account
+- mr number
+- loyalty points
 TRACK_DATA:
-  - track data
-  - track 2
-  - magstripe
-  - magnetic stripe
-
+- track data
+- track 2
+- magstripe
+- magnetic stripe
 CARD_SECURITY_CODE:
-  - \bcid\b
-  - \bcvv\b
-  - \bcvc\b
-  - security code
-  - card verification
-
+- \bcid\b
+- \bcvv\b
+- \bcvc\b
+- security code
+- card verification
 CARD_EXPIRATION_DATE:
-  - expires
-  - expiration
-  - valid thru
-  - exp date
-
-# -- IDENTITY --
+- expires
+- expiration
+- valid thru
+- exp date
 SSN:
-  - \bssn\b
-  - social security
-
+- \bssn\b
+- social security
 TAX_ID:
-  - \bitin\b
-  - tax id
-  - tax identification
-  - employer id
-  - \bein\b
-
+- \bitin\b
+- tax id
+- tax identification
+- employer id
+- \bein\b
 PASSPORT_NUMBER:
-  - passport
-  - travel document
-
+- passport
+- travel document
 DRIVERS_LICENSE_NUMBER:
-  - driver's license
-  - drivers license
-  - license number
-  - \bdl\b
-
-# -- CONTACT --
+- driver's license
+- drivers license
+- license number
+- \bdl\b
 EMAIL_ADDRESS:
-  - email
-  - e-mail
-  - email address
-
+- email
+- e-mail
+- email address
 PHONE_NUMBER:
-  - phone
-  - mobile
-  - telephone
-  - cell phone
-  - contact number
-
-# -- LOCATION / DEVICE --
+- phone
+- mobile
+- telephone
+- cell phone
+- contact number
 PRECISE_GEOLOCATION:
-  - \bgps\b
-  - logged location
-  - precise geo
-  - coordinates
-  - latitude
-  - longitude
-
+- \bgps\b
+- logged location
+- precise geo
+- coordinates
+- latitude
+- longitude
 DEVICE_APP_DATA:
-  - device
-  - mac address
-  - advertising id
-  - device token
-  - device id
-  - \bimei\b
-
+- device
+- mac address
+- advertising id
+- device token
+- device id
+- \bimei\b
 IP_ADDRESS:
-  - ip address
-  - ipv4
-  - ipv6
-
-# -- PERSONAL --
+- ip address
+- ipv4
+- ipv6
 DATE_OF_BIRTH:
-  - \bdob\b
-  - date of birth
-  - birthdate
-  - born on
-
+- \bdob\b
+- date of birth
+- birthdate
+- born on
 AGE:
-  - \bage\b
-  - years old
-
+- \bage\b
+- years old
 GENDER:
-  - gender
-  - \bsex\b
-
-# -- EMPLOYMENT --
+- gender
+- \bsex\b
 EMPLOYEE_ID:
-  - employee
-  - badge number
-  - employee id
-
+- employee
+- badge number
+- employee id
 INCOME:
-  - salary
-  - annual income
-  - household income
-  - gross income
-  - monthly income
-
+- salary
+- annual income
+- household income
+- gross income
+- monthly income
 OCCUPATION:
-  - occupation
-  - job title
-  - position
-  - profession
-
-# -- MEDICAL --
+- occupation
+- job title
+- position
+- profession
 MEDICAL_RECORD_NUMBER:
-  - medical record
-  - \bmrn\b
-  - patient id
-  - chart number
-
+- medical record
+- \bmrn\b
+- patient id
+- chart number
 PRESCRIPTION_NUMBER:
-  - prescription
-  - \brx\b
-
-# -- EDUCATION --
+- prescription
+- \brx\b
 STUDENT_ID:
-  - student id
-  - student number
-
-# -- VEHICLE --
+- student id
+- student number
 VIN:
-  - \bvin\b
-  - vehicle identification
-
+- \bvin\b
+- vehicle identification
 LICENSE_PLATE_NUMBER:
-  - license plate
-  - plate number
-  - tag number
-
-# -- BIOMETRIC --
+- license plate
+- plate number
+- tag number
 BIOMETRIC_INFORMATION:
-  - biometric
-  - fingerprint
-  - retina scan
-  - facial recognition
-  - template
+- biometric
+- fingerprint
+- retina scan
+- facial recognition
+- template
+ACCOUNT_NUMBER:
+- call
+- confirm
+- email
+- file
+- number
+- problem
+- reference
+- since
+- valued
+- account
+- allison
+- appreciate
+- makes
+- patience
+- pull
+- sense
+- card
+- ease
+- pause
+- charge
+- cut
+- irth
+- mer
+- noticed
+- recognize
+- second
+- sorry
+- add
+- count
+- expires
+- iban
+- ould
+- back
+- hold
+- read
+- ssn
+- billing
+- department
+- ending
+- transfer
+- apt
+- junction
+- live
+- melanieview
+- reviewing
+- susan
+- red
+- replacement
+- cvv
+- unacceptable
+- years
+- mber
+- nize
+- phone
+- possible
+- transferred
+- detail
+- much
+- repeat
+- confirmation
+- name
+- sending
+- ame
+- calling
+- anything
+- else
+- help
+- okay
+- today
+- birth
+- date
+- security
+- verify
+- digits
+- four
+- last
+- verification
+- music
+- noting
+- record
+- issue
+- omer
+- resolves
+- social
+- unt
+- ate
+- driver
+- ess
+- hat
+- ail
+- erin
+- river
+- kes
+- new
+- send
+- check
+- one
+- question
+- records
+- case
+- retain
+- mail
+- ber
+- umber
+- background
+- ible
+- locked
+- logging
+- noise
+- system
+- tried
+- nam
+- ght
+- laurie
+- arrive
+- business
+- cement
+- days
+- within
+- address
+- mailing
+- update
+- describe
+- happened
+- ned
+- ddress
+- cation
+- hone
+- ack
+- understand
+- want
+- full
+- diately
+- ban
+- often
+- traveling
+- work
+- fpo
+- liv
+- away
+- escalate
+- fraud
+- team
+- dress
+- gnize
+- aimee
+REFERENCE_IDENTIFIER:
+- address
+- call
+- help
+- mailing
+- name
+- number
+- read
+- reference
+- today
+- update
+- charge
+- noticed
+- recognize
+- repeat
+- uld
+- calling
+- live
+- locked
+- logging
+- nam
+- system
+- tried
+- back
+- email
+- file
+- phone
+- since
+- umber
+- valued
+- billing
+- department
+- hold
+- security
+- transfer
+- detail
+- happened
+- ibe
+- much
+- new
+- possible
+- send
+- birth
+- date
+- ease
+- often
+- traveling
+- verify
+- confirm
+- iban
+- irth
+- one
+- question
+- apt
+- describe
+- harbors
+- raymond
+- issue
+- resolves
+- routing
+- stomer
+- ame
+- vincent
+- add
+- four
+- hould
+- last
+- verification
+- cut
+- sorry
+- unacceptable
+- years
+- mm-hmm
+- work
+- away
+- fraud
+- team
+- ban
+- card
+- cvv
+- expires
+- mber
+- problem
+- transferred
+- gent
+- okay
+- understand
+- want
+- lease
+- amex
+- escalate
+- social
+- akes
+- music
+- sense
+- immediately
+- refund
+- makes
+- records
+- arrive
+- business
+- days
+- within
+- ears
+- replacement
+- background
+- noise
+- location
+- mer
+- omer
+- ssn
+- veling
+- ing
+- digits
+- ber
+- kingmouth
+- motorway
+- ustomer
+- anything
+- else
+- anization
+- lling
+- dress
+- appened
+- gender
+LICENSE_NUMBER:
+- call
+- hold
+- makes
+- number
+- okay
+- reference
+- sense
+- unacceptable
+- anything
+- ate
+- driver
+- else
+- gent
+- help
+- today
+- cut
+- iban
+- second
+- sorry
+- billing
+- department
+- question
+- transfer
+- channel
+- date
+- ease
+- transcript
+- voice
+- email
+- onfirmation
+- add
+- immediately
+- refund
+- since
+- valued
+- years
+- birth
+- irth
+- address
+- away
+- fraud
+- mailing
+- read
+- team
+- update
+CASE_NUMBER:
+- call
+- makes
+- number
+- okay
+- omer
+- routing
+- sense
+- update
+- case
+- often
+- records
+- reference
+- retain
+- traveling
+- social
+- ssn
+- describe
+- email
+- file
+- problem
+- locked
+- logging
+- system
+- transferred
+- tried
+- address
+- card
+- ling
+- read
+- replacement

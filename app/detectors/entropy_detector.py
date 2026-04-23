@@ -12,9 +12,12 @@ import math
 import re
 import logging
 from collections import Counter
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple, TYPE_CHECKING
 
 from app.models import Detection
+
+if TYPE_CHECKING:
+    from app.perf.pii_regions import PIIRegionMask
 
 logger = logging.getLogger("pii_engine.entropy")
 
@@ -46,13 +49,20 @@ class EntropyAnomalyDetector:
         # Token-like pattern: continuous non-whitespace runs of min length
         self._token_re = re.compile(r'\S{' + str(min_span_len) + r',}')
 
-    def detect(self, text: str, existing_detections: List[Detection] = None) -> List[Detection]:
+    def detect(
+        self,
+        text: str,
+        existing_detections: List[Detection] = None,
+        pii_regions: Optional["PIIRegionMask"] = None,
+    ) -> List[Detection]:
         """Scan text for high-entropy spans not already covered by other detectors.
 
         Args:
             text: Full input text.
             existing_detections: Detections from prior pipeline stages (used to
                 skip spans that are already detected).
+            pii_regions: When provided (token-dropping mode), scan only within
+                these regions instead of the full text.
 
         Returns:
             List of Detection objects with label UNKNOWN_SECRET.
@@ -60,27 +70,32 @@ class EntropyAnomalyDetector:
         covered = self._build_covered_set(existing_detections or [])
         candidates: List[Detection] = []
 
-        # Only look at continuous non-whitespace runs (tokens) of sufficient length
-        for match in self._token_re.finditer(text):
-            token = match.group()
-            token_start = match.start()
+        # When PII regions are provided, scan only within those regions.
+        if pii_regions is not None and not pii_regions.is_empty():
+            text_slices = pii_regions.extract_regions(text)
+        else:
+            text_slices = [(text, 0, len(text))]
 
-            if len(token) > self.max_span_len:
-                # Slide window over long tokens
-                for offset in range(0, len(token) - self.min_span_len + 1, self.step):
-                    for win_len in (64, 32, self.min_span_len):
-                        if offset + win_len > len(token):
-                            continue
-                        span = token[offset:offset + win_len]
-                        abs_start = token_start + offset
-                        abs_end = abs_start + win_len
-                        det = self._evaluate_span(span, abs_start, abs_end, covered)
-                        if det is not None:
-                            candidates.append(det)
-            else:
-                det = self._evaluate_span(token, token_start, token_start + len(token), covered)
-                if det is not None:
-                    candidates.append(det)
+        for sub_text, region_start, _region_end in text_slices:
+            for match in self._token_re.finditer(sub_text):
+                token = match.group()
+                token_start = region_start + match.start()
+
+                if len(token) > self.max_span_len:
+                    for offset in range(0, len(token) - self.min_span_len + 1, self.step):
+                        for win_len in (64, 32, self.min_span_len):
+                            if offset + win_len > len(token):
+                                continue
+                            span = token[offset:offset + win_len]
+                            abs_start = token_start + offset
+                            abs_end = abs_start + win_len
+                            det = self._evaluate_span(span, abs_start, abs_end, covered)
+                            if det is not None:
+                                candidates.append(det)
+                else:
+                    det = self._evaluate_span(token, token_start, token_start + len(token), covered)
+                    if det is not None:
+                        candidates.append(det)
 
         # Deduplicate overlapping entropy detections — keep highest score
         return self._deduplicate(candidates)

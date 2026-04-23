@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from app.models import Detection
+
+if TYPE_CHECKING:
+    from app.perf.pii_regions import PIIRegionMask
 
 
 class PatternFieldDetector:
@@ -41,37 +44,50 @@ class PatternFieldDetector:
                 compiled[label].append(pattern)
         return compiled
 
-    def detect(self, text: str) -> List[Detection]:
+    def detect(
+        self,
+        text: str,
+        pii_regions: Optional["PIIRegionMask"] = None,
+    ) -> List[Detection]:
         detections: List[Detection] = []
+
+        # When PII regions are provided (token-dropping mode), scan only
+        # within those regions instead of the full text. Each region's
+        # match offsets are translated back to original-text coordinates.
+        if pii_regions is not None and not pii_regions.is_empty():
+            text_slices = pii_regions.extract_regions(text)
+        else:
+            text_slices = [(text, 0, len(text))]
 
         for label, patterns in self.compiled.items():
             max_len = self.MAX_VALUE_LENGTH.get(label, self.DEFAULT_MAX_VALUE_LENGTH)
             for pattern in patterns:
-                for m in pattern.finditer(text):
-                    value = m.group("value").strip().strip("\"'")
-                    if not value:
-                        continue
+                for sub_text, region_start, _region_end in text_slices:
+                    for m in pattern.finditer(sub_text):
+                        value = m.group("value").strip().strip("\"'")
+                        if not value:
+                            continue
 
-                    # Skip overly long values for the given label type
-                    if len(value) > max_len:
-                        continue
+                        # Skip overly long values for the given label type
+                        if len(value) > max_len:
+                            continue
 
-                    start = m.start("value")
-                    end = m.end("value")
+                        start = region_start + m.start("value")
+                        end = region_start + m.end("value")
 
-                    detections.append(
-                        Detection(
-                            label=label,
-                            text=value,
-                            start=start,
-                            end=end,
-                            score=0.99,
-                            source="field_label",
-                            meta={
-                                "field": m.group("field"),
-                                "full_match": m.group("full"),
-                            },
+                        detections.append(
+                            Detection(
+                                label=label,
+                                text=value,
+                                start=start,
+                                end=end,
+                                score=0.99,
+                                source="field_label",
+                                meta={
+                                    "field": m.group("field"),
+                                    "full_match": m.group("full"),
+                                },
+                            )
                         )
-                    )
 
         return detections

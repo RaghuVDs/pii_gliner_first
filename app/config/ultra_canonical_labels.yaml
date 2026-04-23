@@ -1,0 +1,114 @@
+# ── ULTRA-CANONICAL GLINER LABEL SET ────────────────────────────────────
+#
+# Minimal set of broad PII concepts used in ultra-canonical mode. When the
+# detector runs in this mode, GLiNER is asked about ONLY these labels — at
+# most one forward pass per chunk (cap of max_labels_per_call applies; with
+# the model's hard cap of 30 we stay in a single call).
+#
+# Tradeoff vs canonical mode (162 labels):
+#   + 6x fewer GLiNER forward passes per chunk
+#   + ~6x lower per-row latency on dense data
+#   - GLiNER returns less specific labels (e.g. "person name" instead of
+#     distinguishing "first name" / "last name" / "patient name"). The
+#     downstream context_detector + name-splitter postprocessing recover
+#     specificity from surrounding text.
+#
+# Each entry has:
+#   concept       — the string passed to GLiNER as a zero-shot label
+#   default_label — the strict AMEX taxonomy label assigned when GLiNER
+#                   returns this concept; the context_detector may further
+#                   promote it to a more specific subtype
+#
+# This file is **opt-in**: ultra-canonical mode is OFF by default. Enable
+# via HybridPIIEngine(use_ultra_canonical=True) or the benchmark's
+# --ultra-canonical flag.
+#
+# To extend: add a new entry. Keep total ≤ 30 (model hard cap). Each new
+# concept consumes one row in the label budget. If you need more concepts,
+# you fall back to canonical mode automatically by setting the flag to False.
+
+concepts:
+  # ── Person / identity ──
+  - concept: "person name"
+    default_label: PERSON_FULL_NAME
+
+  # ── Catch-all for novel/unknown PII types ──
+  # GLiNER's zero-shot capability detects PII even when no specific label
+  # matches. The context_detector + LSTM promote UNKNOWN_PII to specific
+  # types based on surrounding text. This replaces the dedicated "first
+  # name" / "last name" labels — the name-splitter postprocessor already
+  # splits PERSON_FULL_NAME into first/middle/last.
+  - concept: "any sensitive personal information"
+    default_label: UNKNOWN_PII
+
+  # ── Contact information ──
+  - concept: "email address"
+    default_label: EMAIL_ADDRESS
+  - concept: "phone number"
+    default_label: PHONE_NUMBER
+  - concept: "street address"
+    default_label: STREET_ADDRESS
+
+  # ── Government / national identifiers ──
+  - concept: "social security number"
+    default_label: SSN
+  - concept: "passport number"
+    default_label: PASSPORT_NUMBER
+  - concept: "driver license number"
+    default_label: DRIVERS_LICENSE_NUMBER
+  - concept: "national id number"
+    default_label: NATIONAL_ID
+  - concept: "tax id number"
+    default_label: TAX_ID
+  - concept: "date of birth"
+    default_label: DATE_OF_BIRTH
+
+  # ── Financial ──
+  - concept: "credit card number"
+    default_label: CREDIT_CARD_NUMBER
+  - concept: "bank account number"
+    default_label: BANK_ACCOUNT_NUMBER
+  - concept: "routing number"
+    default_label: ROUTING_NUMBER
+  - concept: "iban"
+    default_label: IBAN
+
+  # ── Digital ──
+  - concept: "ip address"
+    default_label: IP_ADDRESS
+  - concept: "url"
+    default_label: URL
+  - concept: "username"
+    default_label: USERNAME
+  - concept: "password"
+    default_label: PASSWORD
+  - concept: "api key"
+    default_label: API_KEY
+
+  # ── Vehicle ──
+  - concept: "license plate number"
+    default_label: LICENSE_PLATE_NUMBER
+  - concept: "vehicle identification number"
+    default_label: VIN
+
+  # ── Medical (broad — context_detector promotes to PHI subtypes) ──
+  - concept: "medical record number"
+    default_label: MEDICAL_RECORD_NUMBER
+  - concept: "medical condition or medication"
+    default_label: PHI
+  - concept: "insurance policy number"
+    default_label: INSURANCE_POLICY
+
+  # ── Employment / Education ──
+  - concept: "employee id"
+    default_label: EMPLOYEE_ID
+  - concept: "student id"
+    default_label: STUDENT_ID
+  - concept: "employer name"
+    default_label: EMPLOYER_NAME
+  - concept: "job title"
+    default_label: OCCUPATION
+
+  # ── Legal ──
+  - concept: "court case number"
+    default_label: COURT_CASE_NUMBER

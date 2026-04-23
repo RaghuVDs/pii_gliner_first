@@ -1,0 +1,214 @@
+# ── CONVERSATIONAL PII TRIGGERS ──────────────────────────────────────
+#
+# Each trigger maps a conversational phrase to a PII extraction rule.
+# When the phrase appears in text, the detector looks ahead for a value.
+#
+# Fields:
+#   phrase   — regex pattern for the trigger (case-insensitive)
+#   label    — PII taxonomy label to assign
+#   extract  — extraction mode:
+#              name         — capitalized word(s) (for person names)
+#              next_word    — next non-whitespace token
+#              number       — numeric value (4-10 digits)
+#              short_number — 4-6 digit number (PINs, codes)
+#              identifier   — alphanumeric ID with dashes/dots
+#              line         — everything until end of line
+#              inline_name  — capitalized name on same line (after comma)
+#   window   — chars to look ahead (default 100)
+#   score    — confidence score (default 0.75)
+
+triggers:
+  # ── Identity / Name patterns ──────────────────────────────────────
+  - phrase: '\bmy name is\b'
+    label: PERSON_FULL_NAME
+    extract: name
+    window: 60
+    score: 0.90
+
+  - phrase: '\bname was\b'
+    label: PERSON_FULL_NAME
+    extract: name
+    window: 60
+    score: 0.80
+
+  - phrase: '\bspeak(?:ing)? (?:with|to)\b'
+    label: PERSON_FULL_NAME
+    extract: name
+    window: 60
+    score: 0.75
+
+  - phrase: '\bvendor,?\s+'
+    label: PERSON_FULL_NAME
+    extract: inline_name
+    window: 40
+    score: 0.70
+
+  - phrase: '\bcontact(?:ed)?,?\s+'
+    label: PERSON_FULL_NAME
+    extract: inline_name
+    window: 40
+    score: 0.65
+
+  - phrase: '\bcustomer(?:\s+is)?,?\s+'
+    label: PERSON_FULL_NAME
+    extract: inline_name
+    window: 40
+    score: 0.65
+
+  # ── Security questions ────────────────────────────────────────────
+  - phrase: "(?:mother'?s?\\s+)?maiden\\s+name"
+    label: MOTHERS_MAIDEN_NAME
+    extract: name
+    window: 120
+    score: 0.85
+
+  - phrase: '\bsecurity (?:question|answer)\b'
+    label: SECURITY_ANSWER
+    extract: next_word
+    window: 100
+    score: 0.70
+
+  # ── PIN / codes ───────────────────────────────────────────────────
+  - phrase: '\bverify (?:the |your )?(?:pin|PIN)\b'
+    label: PIN
+    extract: short_number
+    window: 120
+    score: 0.85
+
+  - phrase: '\b(?:pin|PIN) (?:is|was|number)\b'
+    label: PIN
+    extract: short_number
+    window: 80
+    score: 0.85
+
+  - phrase: '\bverification code\b'
+    label: ONE_TIME_CODE
+    extract: short_number
+    window: 100
+    score: 0.80
+
+  - phrase: '\bone.?time (?:code|password|passcode)\b'
+    label: ONE_TIME_CODE
+    extract: short_number
+    window: 100
+    score: 0.80
+
+  # ── Account / financial context ───────────────────────────────────
+  - phrase: '\baccount (?:number|#)\b'
+    label: ACCOUNT_NUMBER
+    extract: number
+    window: 80
+    score: 0.80
+
+  - phrase: '\brouting (?:number|#)\b'
+    label: ROUTING_NUMBER
+    extract: number
+    window: 80
+    score: 0.80
+
+  - phrase: '\bpolicy (?:number|#)\b'
+    label: INSURANCE_POLICY
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bmembership (?:number|#|id)\b'
+    label: UNKNOWN_PII
+    extract: identifier
+    window: 80
+    score: 0.70
+
+  - phrase: '\bloyalty (?:number|#|id|program)\b'
+    label: UNKNOWN_PII
+    extract: identifier
+    window: 80
+    score: 0.70
+
+  # ── Employment / education context ────────────────────────────────
+  - phrase: '\bemployee (?:id|number|#)\b'
+    label: EMPLOYEE_ID
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bstudent (?:id|number|#)\b'
+    label: STUDENT_ID
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bbadge (?:number|#|id)\b'
+    label: EMPLOYEE_ID
+    extract: identifier
+    window: 80
+    score: 0.75
+
+  # ── Medical context ───────────────────────────────────────────────
+  - phrase: '\bmedical record (?:number|#)\b'
+    label: MEDICAL_RECORD_NUMBER
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bpatient (?:id|number|#)\b'
+    label: MEDICAL_RECORD_NUMBER
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bprescription (?:number|#)\b'
+    label: PRESCRIPTION_NUMBER
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  # ── Identity documents ───────────────────────────────────────────
+  - phrase: "\\bdriver'?s?\\s*(?:license|licence)\\s*(?:number|#)?"
+    label: DRIVERS_LICENSE_NUMBER
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bpassport (?:number|#)\b'
+    label: PASSPORT_NUMBER
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bdate of birth\b'
+    label: DATE_OF_BIRTH
+    extract: line
+    window: 80
+    score: 0.80
+
+  - phrase: '\b(?:DOB|dob)\b'
+    label: DATE_OF_BIRTH
+    extract: line
+    window: 60
+    score: 0.75
+
+  # ── Digital / credentials ─────────────────────────────────────────
+  - phrase: '\busername\b'
+    label: USERNAME
+    extract: identifier
+    window: 60
+    score: 0.70
+
+  - phrase: '\bpassword\b'
+    label: PASSWORD
+    extract: next_word
+    window: 60
+    score: 0.75
+
+  # ── Legal ─────────────────────────────────────────────────────────
+  - phrase: '\bcase (?:number|#|ref)\b'
+    label: COURT_CASE_NUMBER
+    extract: identifier
+    window: 80
+    score: 0.80
+
+  - phrase: '\bdocket (?:number|#)\b'
+    label: COURT_CASE_NUMBER
+    extract: identifier
+    window: 80
+    score: 0.80

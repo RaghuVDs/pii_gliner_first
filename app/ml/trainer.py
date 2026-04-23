@@ -932,25 +932,115 @@ class SelfTrainer:
     # ── Pseudo-Labeling ─────────────────────────────────────────────
 
     def pseudo_label(self, detections: List[Detection], full_text: str) -> List[Detection]:
-        """Upgrade UNKNOWN_PII / low-confidence detections using model predictions."""
+        """Upgrade UNKNOWN_PII / low-confidence detections using model predictions.
+
+        Performance note: this used to call predict_for_detection() once per
+        candidate detection, which made an isolated 1-element forward pass with
+        a CPU↔GPU sync at the end. With ~250 upgradeable detections per row
+        (common when GLiNER produces many low-confidence outputs) the per-call
+        launch + sync overhead dominated and the stage cost ~535 ms/row.
+
+        The current implementation does ONE batched forward over all upgradeable
+        detections per call, with a single CPU↔GPU sync at the end. The per-row
+        cost drops by an order of magnitude on GLiNER backbones that emit many
+        low-score detections.
+        """
         if not self.is_ready():
             return detections
 
-        updated = []
-        new_training = []
+        # ── Pass 1: collect all upgradeable detections + features ──────────
+        # We do all the per-detection Python work here (text slicing, keyword
+        # extraction, co-label scan) but defer every GPU op until the batch.
+        upgrade_idx: List[int] = []          # index into `detections`
+        char_id_lists: List[List[int]] = []  # per-row encoded structures
+        context_rows: List[torch.Tensor] = []
+        cached_safe_nbs: List[str] = []      # for the new_training entries below
 
-        for d in detections:
+        num_kw = len(self.keyword_to_idx)
+        num_lb = len(self.label_to_idx)
+        num_sr = len(self.source_to_idx)
+        ctx_dim = num_kw + num_lb + num_sr + 2
+
+        for i, d in enumerate(detections):
             should_upgrade = (
                 d.label == "UNKNOWN_PII"
                 or (d.score < 0.55 and d.source == "gliner")       # GLiNER uncertain
                 or (d.score < 0.50 and d.source == "context")      # Context-promoted but weak
             )
             if not should_upgrade:
+                continue
+
+            val = (d.text or "").strip()
+            if not val:
+                continue
+
+            structure = _value_to_structure(val)
+            safe_nb = _extract_safe_neighborhood(full_text, d.start, d.end, detections, pad=150)
+            keywords = self._extract_keywords(safe_nb)
+            co_labels = sorted(set(
+                o.label for o in detections
+                if o is not d and abs(o.start - d.start) < 500 and o.label != d.label
+            ))
+
+            ctx = torch.zeros(ctx_dim)
+            for kw in keywords:
+                if kw in self.keyword_to_idx:
+                    ctx[self.keyword_to_idx[kw]] = 1.0
+            for cl in co_labels:
+                if cl in self.label_to_idx:
+                    ctx[num_kw + self.label_to_idx[cl]] = 1.0
+            if d.source in self.source_to_idx:
+                ctx[num_kw + num_lb + self.source_to_idx[d.source]] = 1.0
+            ctx[-2] = float(d.score)
+            ctx[-1] = min(len(val) / 100.0, 1.0)
+
+            upgrade_idx.append(i)
+            char_id_lists.append(encode_pattern(structure))
+            context_rows.append(ctx)
+            cached_safe_nbs.append(safe_nb)
+
+        # ── Fast path: nothing to upgrade ─────────────────────────────────
+        if not upgrade_idx:
+            return detections
+
+        # ── Pass 2: single batched forward ────────────────────────────────
+        char_ids_batch = torch.tensor(char_id_lists, dtype=torch.long, device=self.device)
+        ctx_batch = torch.stack(context_rows, dim=0).to(self.device)
+
+        self.model.eval()
+        with torch.no_grad():
+            if self.use_amp:
+                with torch.amp.autocast("cuda"):
+                    logits = self.model(char_ids_batch, ctx_batch)
+            else:
+                logits = self.model(char_ids_batch, ctx_batch)
+            probs = torch.softmax(logits, dim=-1)
+            confidences, pred_indices = probs.max(dim=-1)
+
+        # ONE CPU↔GPU sync for the whole batch
+        confidences_list = confidences.cpu().tolist()
+        pred_indices_list = pred_indices.cpu().tolist()
+
+        # ── Pass 3: apply upgrades and assemble new training entries ──────
+        upgrade_set = set(upgrade_idx)
+        upgrade_results: Dict[int, Tuple[str, float]] = {}
+        # det_idx → batch_pos lookup so we can recover the cached safe_nb in O(1)
+        det_to_batch_pos: Dict[int, int] = {}
+        for batch_pos, det_idx in enumerate(upgrade_idx):
+            label = self.idx_to_label.get(pred_indices_list[batch_pos], "UNKNOWN_PII")
+            conf = round(float(confidences_list[batch_pos]), 4)
+            upgrade_results[det_idx] = (label, conf)
+            det_to_batch_pos[det_idx] = batch_pos
+
+        updated: List[Detection] = []
+        new_training: List[Dict[str, Any]] = []
+
+        for i, d in enumerate(detections):
+            if i not in upgrade_set:
                 updated.append(d)
                 continue
 
-            predicted_label, confidence = self.predict_for_detection(d, detections, full_text)
-
+            predicted_label, confidence = upgrade_results[i]
             if confidence >= PSEUDO_LABEL_THRESHOLD and predicted_label != "UNKNOWN_PII":
                 upgraded = Detection(
                     label=predicted_label, text=d.text, start=d.start, end=d.end,
@@ -966,7 +1056,8 @@ class SelfTrainer:
 
                 val = (d.text or "").strip()
                 if val:
-                    safe_nb = _extract_safe_neighborhood(full_text, d.start, d.end, detections, pad=150)
+                    # Use cached safe_nb from pass 1 (avoid re-slicing the full text)
+                    safe_nb = cached_safe_nbs[det_to_batch_pos[i]]
                     new_training.append({
                         "structure": _value_to_structure(val), "label": predicted_label,
                         "length": len(val), "keywords": self._extract_keywords(safe_nb)[:12],

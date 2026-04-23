@@ -11,9 +11,12 @@ from __future__ import annotations
 
 import re
 import logging
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set, TYPE_CHECKING
 
 from app.models import Detection
+
+if TYPE_CHECKING:
+    from app.perf.pii_regions import PIIRegionMask
 
 logger = logging.getLogger("pii_engine.anomaly")
 
@@ -66,92 +69,91 @@ class ContextualAnomalyDetector:
         )
 
     def detect(
-        self, text: str, existing_detections: List[Detection] = None
+        self,
+        text: str,
+        existing_detections: List[Detection] = None,
+        pii_regions: Optional["PIIRegionMask"] = None,
     ) -> List[Detection]:
-        """Scan for PII-like values in structural positions missed by other detectors."""
+        """Scan for PII-like values in structural positions missed by other detectors.
+
+        When pii_regions is provided (token-dropping mode), both strategies
+        scan only within those regions instead of the full text.
+        """
         covered = self._build_covered_ranges(existing_detections or [])
         detections: List[Detection] = []
 
+        # When PII regions are provided, scan only within those regions.
+        if pii_regions is not None and not pii_regions.is_empty():
+            text_slices = pii_regions.extract_regions(text)
+        else:
+            text_slices = [(text, 0, len(text))]
+
         # Strategy 1: Unknown field labels with compact values
-        for m in self._field_re.finditer(text):
-            label_text = m.group(1).strip().lower()
-            value_text = m.group(2).strip()
-            value_start = m.start(2)
-            value_end = m.start(2) + len(value_text)
+        for sub_text, region_start, _region_end in text_slices:
+            for m in self._field_re.finditer(sub_text):
+                label_text = m.group(1).strip().lower()
+                value_text = m.group(2).strip()
+                value_start = region_start + m.start(2)
+                value_end = region_start + m.start(2) + len(value_text)
 
-            # Skip known field labels
-            if label_text in self.known_field_labels:
-                continue
+                if label_text in self.known_field_labels:
+                    continue
+                if label_text in NON_PII_FIELD_LABELS:
+                    continue
+                if len(label_text.split()) == 1 and len(label_text) <= 4:
+                    continue
+                if self._is_covered(value_start, value_end, covered):
+                    continue
+                if not any(c.isdigit() for c in value_text):
+                    continue
+                if len(value_text.split()) > 4:
+                    continue
 
-            # Skip common non-PII labels (conversation, structural)
-            if label_text in NON_PII_FIELD_LABELS:
-                continue
-
-            # Skip single-word labels that are common English words
-            if len(label_text.split()) == 1 and len(label_text) <= 4:
-                continue
-
-            # Skip if value is already covered by existing detection
-            if self._is_covered(value_start, value_end, covered):
-                continue
-
-            # Value must look like an identifier: contain at least one digit
-            if not any(c.isdigit() for c in value_text):
-                continue
-
-            # Value must be compact (not a sentence) — max 4 words
-            if len(value_text.split()) > 4:
-                continue
-
-            detections.append(Detection(
-                label="UNKNOWN_PII",
-                text=value_text,
-                start=value_start,
-                end=value_end,
-                score=0.55,
-                source="contextual_anomaly",
-                meta={"discovered_field": label_text},
-            ))
+                detections.append(Detection(
+                    label="UNKNOWN_PII",
+                    text=value_text,
+                    start=value_start,
+                    end=value_end,
+                    score=0.55,
+                    source="contextual_anomaly",
+                    meta={"discovered_field": label_text},
+                ))
 
         # Strategy 2: Uncaught compact tokens near context keywords
-        for m in self._value_re.finditer(text):
-            value = m.group(1)
-            start = m.start(1)
-            end = m.end(1)
+        for sub_text, region_start, _region_end in text_slices:
+            for m in self._value_re.finditer(sub_text):
+                value = m.group(1)
+                start = region_start + m.start(1)
+                end = region_start + m.end(1)
 
-            if self._is_covered(start, end, covered):
-                continue
+                if self._is_covered(start, end, covered):
+                    continue
 
-            # Must contain both letters and digits (identifiers, not words or numbers)
-            has_letter = any(c.isalpha() for c in value)
-            has_digit = any(c.isdigit() for c in value)
-            if not (has_letter and has_digit):
-                continue
+                has_letter = any(c.isalpha() for c in value)
+                has_digit = any(c.isdigit() for c in value)
+                if not (has_letter and has_digit):
+                    continue
+                if " " in value:
+                    continue
+                if len(value) < 8:
+                    continue
 
-            # Must be compact — single token, no spaces
-            if " " in value:
-                continue
+                # Check if near a context keyword (within 100 chars in original text)
+                neighborhood = text[max(0, start - 100):min(len(text), end + 100)].lower()
+                matching_keywords = [kw for kw in self.context_keywords if kw in neighborhood]
 
-            if len(value) < 8:
-                continue
+                if len(matching_keywords) < 2:
+                    continue
 
-            # Check if near a context keyword (within 100 chars)
-            neighborhood = text[max(0, start - 100):min(len(text), end + 100)].lower()
-            matching_keywords = [kw for kw in self.context_keywords if kw in neighborhood]
-
-            # Require at least 2 keyword matches for higher confidence
-            if len(matching_keywords) < 2:
-                continue
-
-            detections.append(Detection(
-                label="UNKNOWN_PII",
-                text=value,
-                start=start,
-                end=end,
-                score=0.45,
-                source="contextual_anomaly",
-                meta={"nearby_keywords": matching_keywords[:5]},
-            ))
+                detections.append(Detection(
+                    label="UNKNOWN_PII",
+                    text=value,
+                    start=start,
+                    end=end,
+                    score=0.45,
+                    source="contextual_anomaly",
+                    meta={"nearby_keywords": matching_keywords[:5]},
+                ))
 
         return self._deduplicate(detections)
 

@@ -12,9 +12,10 @@ EMAIL_ADDRESS:
 PHONE_NUMBER:
   # US: (123) 456-7890, 123-456-7890, +1 123 456 7890
   # (?<![A-Za-z]\-) prevents matching inside policy/reference numbers like SF-229-4817362
-  - '(?<![A-Za-z]\-)(?<!\d)((?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4})(?!\d)(?!\-\d)'
-  # 7-digit local: 456-7890
-  - '(?<!\d)(\d{3}-\d{4})(?!\d)'
+  # (?<![A-Za-z]) prevents matching inside identifiers like D120-4589-7823 (driver license)
+  - '(?<![A-Za-z]\-)(?<![A-Za-z])(?<!\d)((?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4})(?!\d)(?!\-\d)'
+  # 7-digit local: 456-7890 (letter lookbehind prevents matching inside identifiers)
+  - '(?<![A-Za-z])(?<!\d)(\d{3}-\d{4})(?!\d)(?!\-\d)'
   # International: +44 20 7123 4567, +91-9876543210
   - '(?<!\d)(\+(?:44|91|61|49|33|86|81|82|55|52|39|34|31|46|47|48|90|65|60|63|64|66|27|20|7)\s*[\d\-\.\s]{7,14})(?!\d)'
 
@@ -141,7 +142,9 @@ MORTGAGE_LOAN_INFO:
 # -- AMEX / IDENTITY --
 
 MR_NUMBER:
-  - '(?i)(?:MR Account|MR Number)?\s*(\d{4}-\d{4}-\d{4}-\d{4})'
+  # Require "MR Account" or "MR Number" prefix to avoid matching credit card
+  # numbers (which are also 4-4-4-4 digit sequences).
+  - '(?i)(?:MR Account|MR Number)\s*[:=]?\s*(\d{4}-\d{4}-\d{4}-\d{4})'
 
 EMPLOYEE_ID:
   # Numeric employee ID
@@ -153,6 +156,9 @@ EMPLOYEE_ID:
 
 PIN:
   - '(?i)(?:pin|passcode|ivr)\s*(?<!\d)(\d{4,6})(?!\d)'
+  # Conversational: "verify the PIN" ... [next line] "7392"
+  # Looks for "pin" within 80 chars before a standalone 4-6 digit number
+  - '(?i)\bpin\b.{0,80}?\b(\d{4,6})\b'
 
 TRACK_DATA:
   - '(%[B|b][0-9]{12,19}\^[^^]+\^[0-9]{4,}\?)'
@@ -464,6 +470,13 @@ COURT_CASE_NUMBER:
   - '(?i)(?:report\s*(?:number|#|no\.?)\s*[:=]?\s*)(\d{4}[\-][A-Z]{1,3}[\-]\d{4,12})\b'
 
 # -- COMMUNICATION & UTILITY --
+
+MOTHERS_MAIDEN_NAME:
+  # Conversational Q&A: "mother's maiden name?" ... "Fitzpatrick"
+  # Captures a capitalized word within 80 chars after "maiden name"
+  - '(?i)(?:mother.?s?\s+)?maiden\s+name\b.{0,80}?\b([A-Z][a-z]{2,25})\b'
+  # Field format: "Maiden Name: Fitzpatrick"
+  - '(?i)(?:mother.?s?\s+)?maiden\s+name\s*[:=\-]\s*([A-Z][a-z]{2,25})\b'
 
 UTILITY_ACCOUNT_NUMBER:
   - '(?i)(?:(?:utility|electric|gas|water|sewer)\s*(?:account|acct)\s*(?:number|#|no\.?)?\s*[:=]?\s*)([A-Z0-9\-]{6,20})\b'
